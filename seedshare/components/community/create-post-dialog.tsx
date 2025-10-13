@@ -21,8 +21,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Plus, Image as ImageIcon, Link as LinkIcon, X } from 'lucide-react'
+import { Plus, Image as ImageIcon, Link as LinkIcon, X, Loader2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { createPost } from '@/app/community/actions'
+import { useRouter } from 'next/navigation'
 
 const communities = [
   { name: 'Seed Saving Tips', slug: 'seed-saving-tips', icon: '🌱' },
@@ -55,6 +57,9 @@ export function CreatePostDialog() {
   const [selectedCommunity, setSelectedCommunity] = useState('')
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [images, setImages] = useState<string[]>([])
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState('')
+  const router = useRouter()
 
   const handleTagToggle = (tag: string) => {
     if (selectedTags.includes(tag)) {
@@ -64,23 +69,44 @@ export function CreatePostDialog() {
     }
   }
 
-  const handleSubmit = () => {
-    // Handle post creation
-    console.log({
-      title,
-      content,
-      community: selectedCommunity,
-      tags: selectedTags,
-      images,
-    })
-    
-    // Reset and close
-    setTitle('')
-    setContent('')
-    setSelectedCommunity('')
-    setSelectedTags([])
-    setImages([])
-    setOpen(false)
+  const handleSubmit = async () => {
+    if (!title || !content) {
+      setError('Title and content are required')
+      return
+    }
+
+    setIsSubmitting(true)
+    setError('')
+
+    try {
+      const result = await createPost({
+        title,
+        content,
+        communityId: undefined, // Communities not set up yet - post to general feed
+        tags: selectedTags,
+        images,
+      })
+
+      if (result.success) {
+        // Reset and close
+        setTitle('')
+        setContent('')
+        setSelectedCommunity('')
+        setSelectedTags([])
+        setImages([])
+        setOpen(false)
+        
+        // Refresh the page to show new post
+        router.refresh()
+      } else {
+        setError(result.error || 'Failed to create post')
+      }
+    } catch (err) {
+      console.error('Error creating post:', err)
+      setError('An unexpected error occurred')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -100,25 +126,27 @@ export function CreatePostDialog() {
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {/* Community Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="community">Choose a community *</Label>
-            <Select value={selectedCommunity} onValueChange={setSelectedCommunity}>
-              <SelectTrigger id="community">
-                <SelectValue placeholder="Select a community..." />
-              </SelectTrigger>
-              <SelectContent>
-                {communities.map((community) => (
-                  <SelectItem key={community.slug} value={community.slug}>
-                    <div className="flex items-center gap-2">
-                      <span>{community.icon}</span>
-                      <span>c/{community.slug}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Community Selection - Hidden for now (communities not set up in database yet) */}
+          {false && (
+            <div className="space-y-2">
+              <Label htmlFor="community">Choose a community *</Label>
+              <Select value={selectedCommunity} onValueChange={setSelectedCommunity}>
+                <SelectTrigger id="community">
+                  <SelectValue placeholder="Select a community..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {communities.map((community) => (
+                    <SelectItem key={community.slug} value={community.slug}>
+                      <div className="flex items-center gap-2">
+                        <span>{community.icon}</span>
+                        <span>c/{community.slug}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* Title */}
           <div className="space-y-2">
@@ -223,6 +251,14 @@ export function CreatePostDialog() {
             )}
           </div>
 
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded p-3 text-sm text-red-800">
+              <p className="font-semibold">Error:</p>
+              <p>{error}</p>
+            </div>
+          )}
+
           {/* Posting Guidelines */}
           <div className="bg-blue-50 border border-blue-200 rounded p-3 text-sm">
             <p className="font-semibold text-blue-900 mb-1">Posting Guidelines:</p>
@@ -236,15 +272,22 @@ export function CreatePostDialog() {
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={isSubmitting}>
             Cancel
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={!title || !selectedCommunity}
+            disabled={!title || !content || isSubmitting}
             className="bg-blue-600 hover:bg-blue-700"
           >
-            Post
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Posting...
+              </>
+            ) : (
+              'Post'
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

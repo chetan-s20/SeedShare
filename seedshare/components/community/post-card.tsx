@@ -22,6 +22,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { votePost, savePost } from '@/app/community/actions'
+import { useRouter } from 'next/navigation'
 
 interface Post {
   id: string
@@ -60,10 +62,17 @@ export function PostCard({ post }: PostCardProps) {
   const [isDownvoted, setIsDownvoted] = useState(post.isDownvoted)
   const [isSaved, setIsSaved] = useState(post.isSaved)
   const [showFullContent, setShowFullContent] = useState(false)
+  const [isVoting, setIsVoting] = useState(false)
+  const router = useRouter()
 
   const voteScore = upvotes - downvotes
 
-  const handleUpvote = () => {
+  const handleUpvote = async () => {
+    if (isVoting) return
+    
+    setIsVoting(true)
+    
+    // Optimistic update
     if (isUpvoted) {
       setUpvotes(upvotes - 1)
       setIsUpvoted(false)
@@ -75,9 +84,38 @@ export function PostCard({ post }: PostCardProps) {
         setIsDownvoted(false)
       }
     }
+
+    try {
+      const result = await votePost(post.id, 'up')
+      if (!result.success) {
+        // Revert on error
+        if (isUpvoted) {
+          setUpvotes(upvotes)
+          setIsUpvoted(true)
+        } else {
+          setUpvotes(upvotes)
+          setIsUpvoted(false)
+          if (isDownvoted) {
+            setDownvotes(downvotes)
+            setIsDownvoted(true)
+          }
+        }
+        console.error('Failed to vote:', result.error)
+      }
+      router.refresh()
+    } catch (error) {
+      console.error('Error voting:', error)
+    } finally {
+      setIsVoting(false)
+    }
   }
 
-  const handleDownvote = () => {
+  const handleDownvote = async () => {
+    if (isVoting) return
+    
+    setIsVoting(true)
+    
+    // Optimistic update
     if (isDownvoted) {
       setDownvotes(downvotes - 1)
       setIsDownvoted(false)
@@ -89,10 +127,48 @@ export function PostCard({ post }: PostCardProps) {
         setIsUpvoted(false)
       }
     }
+
+    try {
+      const result = await votePost(post.id, 'down')
+      if (!result.success) {
+        // Revert on error
+        if (isDownvoted) {
+          setDownvotes(downvotes)
+          setIsDownvoted(true)
+        } else {
+          setDownvotes(downvotes)
+          setIsDownvoted(false)
+          if (isUpvoted) {
+            setUpvotes(upvotes)
+            setIsUpvoted(true)
+          }
+        }
+        console.error('Failed to vote:', result.error)
+      }
+      router.refresh()
+    } catch (error) {
+      console.error('Error voting:', error)
+    } finally {
+      setIsVoting(false)
+    }
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    // Optimistic update
     setIsSaved(!isSaved)
+    
+    try {
+      const result = await savePost(post.id)
+      if (!result.success) {
+        // Revert on error
+        setIsSaved(isSaved)
+        console.error('Failed to save post:', result.error)
+      }
+      router.refresh()
+    } catch (error) {
+      console.error('Error saving post:', error)
+      setIsSaved(isSaved)
+    }
   }
 
   const handleShare = () => {
