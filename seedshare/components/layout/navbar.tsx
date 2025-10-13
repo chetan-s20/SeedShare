@@ -27,6 +27,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { logout } from '@/app/actions/auth'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 interface NavbarProps {
   user?: {
@@ -58,10 +59,10 @@ export function Navbar({ user }: NavbarProps) {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-600">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-600 dark:bg-green-700">
               <Sparkles className="h-5 w-5 text-white" />
             </div>
-            <span className="text-xl font-bold text-green-600">SeedShare</span>
+            <span className="text-xl font-bold text-green-600 dark:text-green-400">SeedShare</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -74,8 +75,8 @@ export function Navbar({ user }: NavbarProps) {
                   href={item.href}
                   className={`flex items-center space-x-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                     isActive(item.href)
-                      ? 'bg-green-100 text-green-700'
-                      : 'text-gray-700 hover:bg-gray-100'
+                      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
                   }`}
                 >
                   <Icon className="h-4 w-4" />
@@ -86,7 +87,10 @@ export function Navbar({ user }: NavbarProps) {
           </div>
 
           {/* User Menu / Auth Buttons */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            {/* Theme Toggle */}
+            <ThemeToggle />
+            
             {user ? (
               <>
                 {/* Points Badge */}
@@ -190,8 +194,8 @@ export function Navbar({ user }: NavbarProps) {
                     href={item.href}
                     className={`flex items-center space-x-2 rounded-md px-3 py-2 text-sm font-medium ${
                       isActive(item.href)
-                        ? 'bg-green-100 text-green-700'
-                        : 'text-gray-700 hover:bg-gray-100'
+                        ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
                     }`}
                     onClick={() => setMobileMenuOpen(false)}
                   >

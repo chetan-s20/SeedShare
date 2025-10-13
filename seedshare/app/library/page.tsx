@@ -22,25 +22,25 @@ export default async function SeedLibraryPage() {
     .limit(12);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white py-16">
+      <div className="bg-gradient-to-r from-green-600 to-emerald-600 dark:from-gray-800 dark:to-gray-900 text-white py-16">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
               Seed Library
             </h1>
-            <p className="text-xl text-green-50 mb-6">
+            <p className="text-xl text-green-50 dark:text-gray-300 mb-6">
               Browse and exchange seeds with fellow farmers and gardeners. Build a resilient, diverse seed collection.
             </p>
             <div className="flex flex-wrap gap-3">
-              <Button size="lg" className="bg-white text-green-600 hover:bg-green-50" asChild>
+              <Button size="lg" className="bg-white text-green-600 hover:bg-green-50 dark:bg-green-700 dark:text-white dark:hover:bg-green-600" asChild>
                 <Link href="/library/add">
                   <Plus className="mr-2 h-5 w-5" />
                   Add Your Seeds
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10" asChild>
+              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 dark:border-gray-600 dark:hover:bg-gray-800" asChild>
                 <Link href="/library/requests">
                   My Requests
                 </Link>
@@ -108,7 +108,7 @@ export default async function SeedLibraryPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {seeds.map((seed: any) => (
                 <Card key={seed.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                  <div className="aspect-square bg-gradient-to-br from-green-100 to-emerald-100 relative">
+                  <div className="aspect-square bg-gradient-to-br from-green-100 to-emerald-100 dark:from-gray-800 dark:to-gray-700 relative">
                     {seed.images && seed.images[0] ? (
                       <Image
                         src={seed.images[0]}
@@ -118,15 +118,15 @@ export default async function SeedLibraryPage() {
                       />
                     ) : (
                       <div className="flex items-center justify-center h-full">
-                        <Leaf className="h-16 w-16 text-green-600" />
+                        <Leaf className="h-16 w-16 text-green-600 dark:text-green-400" />
                       </div>
                     )}
                     <div className="absolute top-2 right-2 flex gap-2">
                       {seed.is_organic && (
-                        <Badge className="bg-green-600">Organic</Badge>
+                        <Badge className="bg-green-600 dark:bg-green-700">Organic</Badge>
                       )}
                       {seed.is_heirloom && (
-                        <Badge className="bg-amber-600">Heirloom</Badge>
+                        <Badge className="bg-amber-600 dark:bg-amber-700">Heirloom</Badge>
                       )}
                     </div>
                   </div>
