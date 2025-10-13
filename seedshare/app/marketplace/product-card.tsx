@@ -1,9 +1,12 @@
-import Link from 'next/link'
+'use client'
+
+import { useState } from 'react'
 import Image from 'next/image'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Star, CheckCircle2, Sprout } from 'lucide-react'
+import { ProductDetailModal } from './product-detail-modal'
 
 interface MarketplaceProduct {
   id: string
@@ -22,6 +25,7 @@ interface MarketplaceProduct {
   rating: number
   review_count: number
   supplier_id: string
+  tags?: string[]
 }
 
 interface MarketplaceProductCardProps {
@@ -29,11 +33,14 @@ interface MarketplaceProductCardProps {
 }
 
 export function MarketplaceProductCard({ product }: MarketplaceProductCardProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  
   const imageUrl = product.images && product.images.length > 0 
     ? product.images[0] 
     : '/placeholder-seed.jpg'
 
   return (
+    <>
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
       <div className="relative h-48 bg-gray-100 dark:bg-gray-800">
         <Image
@@ -98,15 +105,24 @@ export function MarketplaceProductCard({ product }: MarketplaceProductCardProps)
       </CardContent>
       
       <CardFooter className="gap-2">
-        <Button asChild className="flex-1">
-          <Link href={`/marketplace/${product.id}`}>
-            View Details
-          </Link>
+        <Button 
+          className="flex-1"
+          onClick={() => setIsModalOpen(true)}
+        >
+          View Details
         </Button>
         <Button variant="outline" size="icon">
           <Star className="w-4 h-4" />
         </Button>
       </CardFooter>
     </Card>
+
+    {/* Product Detail Modal */}
+    <ProductDetailModal 
+      product={product}
+      open={isModalOpen}
+      onOpenChange={setIsModalOpen}
+    />
+  </>
   )
 }
