@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { joinCommunity, leaveCommunity } from '@/app/community/actions'
 import { useState } from 'react'
 import { UserPlus, UserMinus, Loader2 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 interface JoinCommunityButtonProps {
   communityId: string
@@ -14,6 +15,7 @@ interface JoinCommunityButtonProps {
 export function JoinCommunityButton({ communityId, isMember, size = 'default' }: JoinCommunityButtonProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [memberStatus, setMemberStatus] = useState(isMember)
+  const router = useRouter()
 
   async function handleClick() {
     setIsLoading(true)
@@ -22,11 +24,13 @@ export function JoinCommunityButton({ communityId, isMember, size = 'default' }:
       const result = await leaveCommunity(communityId)
       if (result.success) {
         setMemberStatus(false)
+        router.refresh() // Refresh to update member counts
       }
     } else {
       const result = await joinCommunity(communityId)
       if (result.success) {
         setMemberStatus(true)
+        router.refresh() // Refresh to update member counts
       }
     }
     

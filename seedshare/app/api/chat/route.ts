@@ -195,11 +195,21 @@ export async function POST(request: NextRequest) {
       systemInstruction: systemPrompt,
     })
 
-    // Build chat history
+    // Build chat history - MUST start with user message
     const chatHistory = history?.map((msg: any) => ({
       role: msg.role === 'assistant' ? 'model' : 'user',
       parts: [{ text: msg.content }],
     })) || []
+
+    // Remove welcome message if it's the first message (assistant greeting)
+    // Gemini requires chat history to start with 'user', not 'model'
+    const validHistory = chatHistory.filter((msg: any, index: number) => {
+      // If first message is from model (assistant welcome), skip it
+      if (index === 0 && msg.role === 'model') {
+        return false
+      }
+      return true
+    })
 
     // Configuration
     const generationConfig = {
@@ -211,7 +221,7 @@ export async function POST(request: NextRequest) {
 
     // Start chat with history
     const chat = model.startChat({
-      history: chatHistory.slice(0, -1), // Exclude the last user message as it's sent separately
+      history: validHistory.slice(0, -1), // Exclude the last user message as it's sent separately
       generationConfig,
     })
 

@@ -10,12 +10,18 @@ import { CreatePostDialog } from '@/components/community/create-post-dialog'
 import { PostCard } from '@/components/community/post-card'
 import { getCommunityPosts } from '@/app/community/actions'
 
+// Force dynamic rendering - don't cache this page
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 interface Props {
-  params: { id: string }
-  searchParams: { sort?: 'hot' | 'new' | 'top' | 'rising' }
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ sort?: 'hot' | 'new' | 'top' | 'rising' }>
 }
 
 export default async function CommunityDetailPage({ params, searchParams }: Props) {
+  const { id: communityId } = await params
+  const { sort } = await searchParams
   const supabase = await createClient()
   
   // Get current user
@@ -32,7 +38,7 @@ export default async function CommunityDetailPage({ params, searchParams }: Prop
         avatar_url
       )
     `)
-    .eq('id', params.id)
+    .eq('id', communityId)
     .single()
 
   if (error || !community) {
@@ -45,7 +51,7 @@ export default async function CommunityDetailPage({ params, searchParams }: Prop
     const { data: membership } = await supabase
       .from('community_members')
       .select('id')
-      .eq('community_id', params.id)
+      .eq('community_id', communityId)
       .eq('user_id', user.id)
       .single()
     
@@ -53,8 +59,8 @@ export default async function CommunityDetailPage({ params, searchParams }: Prop
   }
 
   // Fetch community posts (filtered by this community)
-  const sortBy = searchParams.sort || 'hot'
-  const { posts } = await getCommunityPosts(sortBy, params.id)
+  const sortBy = sort || 'hot'
+  const { posts } = await getCommunityPosts(sortBy, communityId)
 
   // Get recent members
   const { data: recentMembers } = await supabase
@@ -67,7 +73,7 @@ export default async function CommunityDetailPage({ params, searchParams }: Prop
         avatar_url
       )
     `)
-    .eq('community_id', params.id)
+    .eq('community_id', communityId)
     .order('joined_at', { ascending: false })
     .limit(5)
 
@@ -143,7 +149,7 @@ export default async function CommunityDetailPage({ params, searchParams }: Prop
           {user && isMember && (
             <Card>
               <CardContent className="pt-6">
-                <CreatePostDialog communityId={params.id} />
+                <CreatePostDialog communityId={communityId} />
               </CardContent>
             </Card>
           )}
@@ -152,19 +158,19 @@ export default async function CommunityDetailPage({ params, searchParams }: Prop
           <Tabs defaultValue={sortBy} className="w-full">
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="hot" asChild>
-                <a href={`/communities/${params.id}?sort=hot`}>
+                <a href={`/communities/${communityId}?sort=hot`}>
                   <TrendingUp className="h-4 w-4 mr-2" />
                   Hot
                 </a>
               </TabsTrigger>
               <TabsTrigger value="new" asChild>
-                <a href={`/communities/${params.id}?sort=new`}>New</a>
+                <a href={`/communities/${communityId}?sort=new`}>New</a>
               </TabsTrigger>
               <TabsTrigger value="top" asChild>
-                <a href={`/communities/${params.id}?sort=top`}>Top</a>
+                <a href={`/communities/${communityId}?sort=top`}>Top</a>
               </TabsTrigger>
               <TabsTrigger value="rising" asChild>
-                <a href={`/communities/${params.id}?sort=rising`}>Rising</a>
+                <a href={`/communities/${communityId}?sort=rising`}>Rising</a>
               </TabsTrigger>
             </TabsList>
           </Tabs>

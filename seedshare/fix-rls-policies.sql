@@ -1,11 +1,13 @@
 -- Fix Row Level Security (RLS) Policies
 -- This fixes the "new row violates row-level security policy" error
+-- SAFE TO RUN MULTIPLE TIMES - Uses DROP IF EXISTS
 
 -- ==========================================
 -- FIX 1: Gamification Table - Add INSERT Policy
 -- ==========================================
 -- The gamification table only has SELECT policy, missing INSERT
 
+-- Drop existing policies first (safe - won't error if they don't exist)
 DROP POLICY IF EXISTS "Users can view their own gamification records" ON gamification;
 DROP POLICY IF EXISTS "Users can insert their own gamification records" ON gamification;
 DROP POLICY IF EXISTS "System can insert gamification records" ON gamification;

@@ -10,6 +10,8 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { createChatConversation, saveMessage, getConversation } from '@/lib/supabase/ai-chat'
 import { ChatSidebar } from './chat-sidebar'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 interface Message {
   id: string
@@ -350,9 +352,42 @@ export function AIChatbot() {
                   : 'bg-muted mr-12'
               }`}
             >
-              <div className="text-sm whitespace-pre-wrap break-words overflow-wrap-anywhere">
-                {message.content}
-              </div>
+              {message.role === 'user' ? (
+                <div className="text-sm whitespace-pre-wrap break-words overflow-wrap-anywhere">
+                  {message.content}
+                </div>
+              ) : (
+                <div className="text-sm prose prose-sm dark:prose-invert max-w-none">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                      ul: ({ children }) => <ul className="mb-3 ml-4 space-y-1 list-disc">{children}</ul>,
+                      ol: ({ children }) => <ol className="mb-3 ml-4 space-y-1 list-decimal">{children}</ol>,
+                      li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+                      strong: ({ children }) => <strong className="font-bold text-foreground">{children}</strong>,
+                      em: ({ children }) => <em className="italic">{children}</em>,
+                      h1: ({ children }) => <h1 className="text-lg font-bold mb-2 mt-3 first:mt-0">{children}</h1>,
+                      h2: ({ children }) => <h2 className="text-base font-bold mb-2 mt-3 first:mt-0">{children}</h2>,
+                      h3: ({ children }) => <h3 className="text-sm font-bold mb-1 mt-2 first:mt-0">{children}</h3>,
+                      code: ({ className, children }) => {
+                        const isInline = !className
+                        return isInline ? (
+                          <code className="bg-muted-foreground/20 px-1.5 py-0.5 rounded text-xs font-mono">
+                            {children}
+                          </code>
+                        ) : (
+                          <code className="block bg-muted-foreground/20 p-3 rounded-md text-xs font-mono overflow-x-auto my-2">
+                            {children}
+                          </code>
+                        )
+                      },
+                    }}
+                  >
+                    {message.content}
+                  </ReactMarkdown>
+                </div>
+              )}
               <p 
                 className={`text-xs mt-2 ${
                   message.role === 'user' ? 'text-blue-100' : 'text-muted-foreground'
