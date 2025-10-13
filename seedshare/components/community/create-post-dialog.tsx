@@ -26,17 +26,6 @@ import { Badge } from '@/components/ui/badge'
 import { createPost } from '@/app/community/actions'
 import { useRouter } from 'next/navigation'
 
-const communities = [
-  { name: 'Seed Saving Tips', slug: 'seed-saving-tips', icon: '🌱' },
-  { name: 'Urban Farming', slug: 'urban-farming', icon: '🏙️' },
-  { name: 'Seed Market Watch', slug: 'seed-market-watch', icon: '🔍' },
-  { name: 'Seed Science', slug: 'seed-science', icon: '🔬' },
-  { name: 'Indigenous Seeds', slug: 'indigenous-seeds', icon: '🌾' },
-  { name: 'Organic Gardening', slug: 'organic-gardening', icon: '🌿' },
-  { name: 'Permaculture', slug: 'permaculture', icon: '🌳' },
-  { name: 'Seed Exchange', slug: 'seed-exchange', icon: '🤝' },
-]
-
 const popularTags = [
   'heirloom',
   'organic',
@@ -50,7 +39,11 @@ const popularTags = [
   'help-needed',
 ]
 
-export function CreatePostDialog() {
+interface CreatePostDialogProps {
+  communityId?: string
+}
+
+export function CreatePostDialog({ communityId }: CreatePostDialogProps = {}) {
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
@@ -82,7 +75,7 @@ export function CreatePostDialog() {
       const result = await createPost({
         title,
         content,
-        communityId: undefined, // Communities not set up yet - post to general feed
+        communityId: communityId || undefined,
         tags: selectedTags,
         images,
       })
@@ -126,25 +119,10 @@ export function CreatePostDialog() {
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {/* Community Selection - Hidden for now (communities not set up in database yet) */}
-          {false && (
-            <div className="space-y-2">
-              <Label htmlFor="community">Choose a community *</Label>
-              <Select value={selectedCommunity} onValueChange={setSelectedCommunity}>
-                <SelectTrigger id="community">
-                  <SelectValue placeholder="Select a community..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {communities.map((community) => (
-                    <SelectItem key={community.slug} value={community.slug}>
-                      <div className="flex items-center gap-2">
-                        <span>{community.icon}</span>
-                        <span>c/{community.slug}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          {/* Community indicator (if posting to specific community) */}
+          {communityId && (
+            <div className="bg-muted p-3 rounded-lg">
+              <p className="text-sm">Posting to this community</p>
             </div>
           )}
 

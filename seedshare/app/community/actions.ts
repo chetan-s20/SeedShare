@@ -39,7 +39,7 @@ export interface CommunityPost {
   is_saved?: boolean
 }
 
-export async function getCommunityPosts(sortBy: 'hot' | 'new' | 'top' | 'rising' = 'hot') {
+export async function getCommunityPosts(sortBy: 'hot' | 'new' | 'top' | 'rising' = 'hot', communityId?: string) {
   const supabase = await createClient()
 
   // Get current user (optional - for vote status)
@@ -62,6 +62,11 @@ export async function getCommunityPosts(sortBy: 'hot' | 'new' | 'top' | 'rising'
         description
       )
     `)
+
+  // Filter by community if specified
+  if (communityId) {
+    query = query.eq('community_id', communityId)
+  }
 
   // Apply sorting
   switch (sortBy) {
@@ -211,7 +216,121 @@ export async function savePost(postId: string) {
   }
 
   revalidatePath('/community')
+  revalidatePath('/communities')
   return { success: true }
+}
+
+export async function joinCommunity(communityId: string) {
+  const supabase = await createClient()
+  
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    return { success: false, error: 'Not authenticated' }
+  }
+
+  const { error } = await supabase
+    .from('community_members')
+    .insert({ community_id: communityId, user_id: user.id } as any)
+
+  if (error) {
+    return { success: false, error: error.message }
+  }
+
+  // Update member count
+  const { data: community } = await supabase
+    .from('communities')
+    .select('member_count')
+    .eq('id', communityId)
+    .single()
+  
+  if (community) {
+    await supabase
+      .from('communities')
+      .update({ member_count: ((community as any).member_count || 0) + 1 } as any)
+      .eq('id', communityId)
+  }
+
+  revalidatePath('/communities')
+  revalidatePath(`/communities/${communityId}`)
+  return { success: true }
+}
+
+export async function leaveCommunity(communityId: string) {
+  const supabase = await createClient()
+  
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    return { success: false, error: 'Not authenticated' }
+  }
+
+  const { error } = await supabase
+    .from('community_members')
+    .delete()
+    .eq('community_id', communityId)
+    .eq('user_id', user.id)
+
+  if (error) {
+    return { success: false, error: error.message }
+  }
+
+  // Update member count
+  const { data: community } = await supabase
+    .from('communities')
+    .select('member_count')
+    .eq('id', communityId)
+    .single()
+  
+  if (community) {
+    await supabase
+      .from('communities')
+      .update({ member_count: Math.max(((community as any).member_count || 1) - 1, 0) } as any)
+      .eq('id', communityId)
+  }
+
+  revalidatePath('/communities')
+  revalidatePath(`/communities/${communityId}`)
+  return { success: true }
+}
+
+export async function createCommunity(formData: {
+  name: string
+  description: string
+  region: string
+  state: string
+  city?: string
+}) {
+  const supabase = await createClient()
+  
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    return { success: false, error: 'Not authenticated' }
+  }
+
+  const { data, error } = await supabase
+    .from('communities')
+    .insert({
+      name: formData.name,
+      description: formData.description,
+      region: formData.region,
+      state: formData.state,
+      city: formData.city || null,
+      created_by: user.id,
+      member_count: 1
+    } as any)
+    .select()
+    .single()
+
+  if (error) {
+    return { success: false, error: error.message }
+  }
+
+  // Auto-join creator as first member
+  await supabase
+    .from('community_members')
+    .insert({ community_id: (data as any).id, user_id: user.id } as any)
+
+  revalidatePath('/communities')
+  return { success: true, communityId: (data as any).id }
 }
 
 export async function createPost(formData: {

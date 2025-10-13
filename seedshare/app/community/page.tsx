@@ -9,6 +9,7 @@ import {
   Clock,
   TrendingUp,
   Award,
+  Users,
 } from 'lucide-react'
 import { CreatePostDialog } from '@/components/community/create-post-dialog'
 import { PostCard } from '@/components/community/post-card'
@@ -62,10 +63,12 @@ export default async function CommunityPage({
 
             {/* Right side - Actions */}
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" className="gap-2">
-                <Filter className="h-4 w-4" />
-                Filter
-              </Button>
+              <Link href="/communities">
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Users className="h-4 w-4" />
+                  Browse Communities
+                </Button>
+              </Link>
               <CreatePostDialog />
             </div>
           </div>
