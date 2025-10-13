@@ -1,0 +1,7 @@
+{
+  "buildCommand": "cd seedshare && pnpm install && pnpm build",
+  "devCommand": "cd seedshare && pnpm dev",
+  "installCommand": "cd seedshare && pnpm install",
+  "framework": "nextjs",
+  "outputDirectory": "seedshare/.next"
+}

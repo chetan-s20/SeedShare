@@ -353,9 +353,12 @@ export function AIChatbot() {
               <div className="text-sm whitespace-pre-wrap break-words overflow-wrap-anywhere">
                 {message.content}
               </div>
-              <p className={`text-xs mt-2 ${
-                message.role === 'user' ? 'text-blue-100' : 'text-muted-foreground'
-              }`}>
+              <p 
+                className={`text-xs mt-2 ${
+                  message.role === 'user' ? 'text-blue-100' : 'text-muted-foreground'
+                }`}
+                suppressHydrationWarning
+              >
                 {message.timestamp.toLocaleTimeString()}
               </p>
             </div>
