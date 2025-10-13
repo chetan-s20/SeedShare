@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Input } from '@/components/ui/input'
@@ -65,6 +65,21 @@ export function ChatSidebar({
   useEffect(() => {
     loadConversations()
   }, [])
+
+  // Only reload sidebar when a NEW conversation is created (not on every ID change)
+  // This prevents excessive reloads when switching between existing conversations
+  const previousConversationId = useRef<string | null>(null)
+  
+  useEffect(() => {
+    if (currentConversationId && currentConversationId !== previousConversationId.current) {
+      // Check if this is a new conversation (not in current list)
+      const isNewConversation = !conversations.find(c => c.id === currentConversationId)
+      if (isNewConversation) {
+        loadConversations()
+      }
+      previousConversationId.current = currentConversationId
+    }
+  }, [currentConversationId, conversations])
 
   useEffect(() => {
     if (searchQuery.trim() === '') {
@@ -217,14 +232,14 @@ export function ChatSidebar({
               </div>
             ) : (
               filteredConversations.map((conversation) => (
-                <button
+                <div
                   key={conversation.id}
-                  onClick={() => onSelectConversation(conversation.id)}
-                  className={`w-full text-left p-3 rounded-lg transition-colors group hover:bg-accent ${
+                  className={`relative group w-full p-3 rounded-lg transition-colors hover:bg-accent cursor-pointer ${
                     currentConversationId === conversation.id
                       ? 'bg-accent border border-primary/20'
                       : 'hover:bg-accent/50'
                   }`}
+                  onClick={() => onSelectConversation(conversation.id)}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
@@ -244,16 +259,19 @@ export function ChatSidebar({
                         </span>
                       </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => handleDeleteClick(e, conversation.id)}
-                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10 hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => handleDeleteClick(e, conversation.id)}
+                        className="h-7 w-7 opacity-30 group-hover:opacity-100 hover:opacity-100 transition-all duration-200 hover:bg-destructive hover:text-destructive-foreground"
+                        title="Delete conversation"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </div>
-                </button>
+                </div>
               ))
             )}
           </div>

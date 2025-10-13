@@ -1,59 +1,152 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
-// Initialize Gemini AI
+// Initialize SeedSearch AI
 const genAI = new GoogleGenerativeAI(process.env.OPENAI_API_KEY || '')
 
+// Format response to remove asterisks and use numbered lists
+function formatResponse(text: string): string {
+  // Split into lines
+  const lines = text.split('\n')
+  let counter = 0
+  let inList = false
+  
+  const formattedLines = lines.map(line => {
+    // Check if line starts with asterisk, bullet, or dash
+    const bulletMatch = line.match(/^\s*[\*\•\-]\s*\*?\*?(.+)$/)
+    
+    if (bulletMatch) {
+      // Start or continue numbered list
+      if (!inList) {
+        counter = 1
+        inList = true
+      } else {
+        counter++
+      }
+      return `${counter}. ${bulletMatch[1].replace(/^\*+/, '').trim()}`
+    } else if (line.trim() === '') {
+      // Empty line resets the list
+      inList = false
+      counter = 0
+      return line
+    } else {
+      // Regular line
+      inList = false
+      counter = 0
+      return line
+    }
+  })
+  
+  return formattedLines.join('\n')
+}
+
+// Simple web search function using DuckDuckGo (no API key needed)
+async function searchWeb(query: string): Promise<string> {
+  try {
+    // Use DuckDuckGo Instant Answer API (free, no key needed)
+    const response = await fetch(
+      `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`,
+      { 
+        method: 'GET',
+        headers: { 'User-Agent': 'SeedShare-Bot/1.0' }
+      }
+    )
+    
+    if (!response.ok) {
+      return ''
+    }
+    
+    const data = await response.json()
+    
+    // Extract relevant information
+    let searchResults = ''
+    
+    if (data.Abstract) {
+      searchResults += `${data.Abstract}\n\n`
+    }
+    
+    if (data.RelatedTopics && data.RelatedTopics.length > 0) {
+      searchResults += 'Related Information:\n'
+      data.RelatedTopics.slice(0, 3).forEach((topic: any, index: number) => {
+        if (topic.Text) {
+          searchResults += `${index + 1}. ${topic.Text}\n`
+        }
+      })
+    }
+    
+    return searchResults.trim()
+  } catch (error) {
+    console.error('Web search error:', error)
+    return ''
+  }
+}
+
 const SYSTEM_PROMPTS = {
-  english: `You are an agricultural expert helping Indian farmers. Give practical farming advice.
+  english: `You are an agricultural expert helping Indian farmers. Give practical farming advice based on both your knowledge and current web information.
 
-IMPORTANT FORMATTING RULES:
-- Use numbered lists (1. 2. 3.) for steps
-- NEVER use asterisks (*) or bullet points (•)
-- Keep responses under 250 words
-- Use simple English
-- Give specific, actionable advice
+CRITICAL FORMATTING RULES - MUST FOLLOW:
+1. ALWAYS use numbered lists (1. 2. 3. 4.) for any steps or points
+2. NEVER EVER use asterisks (*) - they are FORBIDDEN
+3. NEVER use bullet points (•) or dashes (-)
+4. If you use asterisks, the response will be rejected
+5. Keep responses under 250 words
+6. Use simple English
+7. Give specific, actionable advice
 
-Example format:
-"To store tomato seeds:
+CORRECT FORMAT EXAMPLE:
+"To grow sunflowers in India:
 
-1. Select ripe tomatoes from healthy plants
-2. Squeeze seeds into a jar with water
-3. Ferment for 3-4 days (stir daily)
-4. Rinse to remove pulp
-5. Dry on paper for 1-2 weeks
-6. Store in cool, dry place
+1. Choose high-oil varieties like KBSH 44 or DRSH-1
+2. Prepare well-drained soil with pH 6.0-7.5
+3. Sow seeds 45 cm apart in rows 60 cm apart
+4. Water regularly during flowering
+5. Harvest when back of flower turns yellow
 
-Seeds stay good for 3-5 years."
+Best time: January-February or July-August"
 
-Always format like this - clear, numbered, no asterisks.`,
+WRONG FORMAT (DO NOT USE):
+"To grow sunflowers:
+* Choose varieties (WRONG - uses asterisk)
+• Prepare soil (WRONG - uses bullet)
+- Sow seeds (WRONG - uses dash)
+
+Remember: Only use numbers (1. 2. 3.) - NO asterisks or bullets!`,
 
   hindi: `आप एक कृषि विशेषज्ञ हैं जो भारतीय किसानों की मदद कर रहे हैं।
 
-महत्वपूर्ण नियम:
-- क्रमांकित सूची (1. 2. 3.) का उपयोग करें
-- तारे (*) या बुलेट पॉइंट का उपयोग बिल्कुल न करें
-- 250 शब्दों से कम में उत्तर दें
-- सरल हिंदी का प्रयोग करें
-- व्यावहारिक सलाह दें`,
+महत्वपूर्ण फ़ॉर्मेटिंग नियम - अवश्य पालन करें:
+1. हमेशा क्रमांकित सूची (1. 2. 3. 4.) का उपयोग करें
+2. तारे (*) का उपयोग बिल्कुल न करें - ये प्रतिबंधित हैं
+3. बुलेट पॉइंट (•) या डैश (-) का उपयोग न करें
+4. 250 शब्दों से कम में उत्तर दें
+5. सरल हिंदी का प्रयोग करें
+6. व्यावहारिक सलाह दें
+
+याद रखें: केवल नंबर (1. 2. 3.) का उपयोग करें - कोई तारे या बुलेट नहीं!`,
 
   punjabi: `ਤੁਸੀਂ ਇੱਕ ਖੇਤੀਬਾੜੀ ਮਾਹਿਰ ਹੋ ਜੋ ਭਾਰਤੀ ਕਿਸਾਨਾਂ ਦੀ ਮਦਦ ਕਰ ਰਹੇ ਹੋ।
 
-ਜ਼ਰੂਰੀ ਨਿਯਮ:
-- ਨੰਬਰ ਵਾਲੀ ਸੂਚੀ (1. 2. 3.) ਵਰਤੋ
-- ਤਾਰੇ (*) ਜਾਂ ਬੁਲੇਟ ਪੁਆਇੰਟ ਬਿਲਕੁਲ ਨਾ ਵਰਤੋ
-- 250 ਸ਼ਬਦਾਂ ਤੋਂ ਘੱਟ ਵਿੱਚ ਜਵਾਬ ਦਿਓ
-- ਸਰਲ ਪੰਜਾਬੀ ਵਰਤੋ
-- ਵਿਹਾਰਕ ਸਲਾਹ ਦਿਓ`,
+ਜ਼ਰੂਰੀ ਫਾਰਮੈਟਿੰਗ ਨਿਯਮ - ਲਾਜ਼ਮੀ ਪਾਲਣਾ ਕਰੋ:
+1. ਹਮੇਸ਼ਾ ਨੰਬਰ ਵਾਲੀ ਸੂਚੀ (1. 2. 3. 4.) ਵਰਤੋ
+2. ਤਾਰੇ (*) ਬਿਲਕੁਲ ਨਾ ਵਰਤੋ - ਇਹ ਮਨ੍ਹਾ ਹਨ
+3. ਬੁਲੇਟ ਪੁਆਇੰਟ (•) ਜਾਂ ਡੈਸ਼ (-) ਨਾ ਵਰਤੋ
+4. 250 ਸ਼ਬਦਾਂ ਤੋਂ ਘੱਟ ਵਿੱਚ ਜਵਾਬ ਦਿਓ
+5. ਸਰਲ ਪੰਜਾਬੀ ਵਰਤੋ
+6. ਵਿਹਾਰਕ ਸਲਾਹ ਦਿਓ
+
+ਯਾਦ ਰੱਖੋ: ਸਿਰਫ਼ ਨੰਬਰ (1. 2. 3.) ਵਰਤੋ - ਕੋਈ ਤਾਰੇ ਜਾਂ ਬੁਲੇਟ ਨਹੀਂ!`,
 
   haryanvi: `थम एक खेती के माहिर सो जो हरियाणा के किसानां की मदद करण लागरया सो।
 
-जरूरी नियम:
-- नंबर वाली सूची (1. 2. 3.) काम म्ह ल्यो
-- तारे (*) या बुलेट बिल्कुल ना लगाओ
-- 250 शब्दां तै कम म्ह जवाब द्यो
-- साधी हरयाणवी बोल्लो
-- काम की सलाह द्यो`
+जरूरी फॉर्मेटिंग नियम - पक्का पालन करो:
+1. हमेशा नंबर वाली सूची (1. 2. 3. 4.) काम म्ह ल्यो
+2. तारे (*) बिल्कुल ना लगाओ - ये मना सै
+3. बुलेट पॉइंट (•) या डैश (-) ना लगाओ
+4. 250 शब्दां तै कम म्ह जवाब द्यो
+5. साधी हरयाणवी बोल्लो
+6. काम की सलाह द्यो
+
+याद राक्खो: सिर्फ नंबर (1. 2. 3.) लगाओ - कोए तारे या बुलेट नहीं!`
 }
 
 export async function POST(request: NextRequest) {
@@ -69,7 +162,7 @@ export async function POST(request: NextRequest) {
 
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(
-        { error: 'Gemini API key not configured' },
+        { error: 'AI API key not configured' },
         { status: 500 }
       )
     }
@@ -77,9 +170,28 @@ export async function POST(request: NextRequest) {
     // Get the system prompt for selected language
     const systemPrompt = SYSTEM_PROMPTS[language as keyof typeof SYSTEM_PROMPTS] || SYSTEM_PROMPTS.english
 
-    // Get the generative model
+    // Perform web search for relevant queries
+    let webContext = ''
+    const shouldSearch = message.toLowerCase().includes('price') ||
+                        message.toLowerCase().includes('weather') ||
+                        message.toLowerCase().includes('current') ||
+                        message.toLowerCase().includes('latest') ||
+                        message.toLowerCase().includes('market') ||
+                        message.toLowerCase().includes('news') ||
+                        message.toLowerCase().includes('today') ||
+                        message.toLowerCase().includes('mandi') ||
+                        message.length > 50 // Complex questions likely benefit from search
+
+    if (shouldSearch) {
+      const searchResults = await searchWeb(message)
+      if (searchResults) {
+        webContext = `\n\nWeb Search Results:\n${searchResults}\n\n`
+      }
+    }
+
+    // Get the generative model (backend uses Google's Gemini API)
     const model = genAI.getGenerativeModel({ 
-      model: 'gemini-2.0-flash-exp',
+      model: 'gemini-2.0-flash-exp', // Backend model (user sees "SeedSearch AI")
       systemInstruction: systemPrompt,
     })
 
@@ -89,34 +201,46 @@ export async function POST(request: NextRequest) {
       parts: [{ text: msg.content }],
     })) || []
 
+    // Configuration
+    const generationConfig = {
+      maxOutputTokens: 2048,
+      temperature: 0.7,
+      topP: 0.9,
+      topK: 40,
+    }
+
     // Start chat with history
     const chat = model.startChat({
       history: chatHistory.slice(0, -1), // Exclude the last user message as it's sent separately
-      generationConfig: {
-        maxOutputTokens: 2048, // Increased for complete responses
-        temperature: 0.7,
-        topP: 0.9,
-        topK: 40,
-      },
+      generationConfig,
     })
 
+    // Enhance message with web context if available
+    const enhancedMessage = webContext 
+      ? `${message}${webContext}Please provide accurate information based on both your knowledge and the web search results above.`
+      : message
+
     // Send message and get response
-    const result = await chat.sendMessage(message)
+    const result = await chat.sendMessage(enhancedMessage)
     const response = result.response
-    const text = response.text()
+    let text = response.text()
 
     // Ensure response is complete
     if (!text || text.trim().length === 0) {
-      throw new Error('Empty response from Gemini')
+      throw new Error('Empty response from AI')
     }
+
+    // Post-process: Convert asterisks to numbered lists
+    text = formatResponse(text)
 
     return NextResponse.json({
       response: text,
-      model: 'gemini-2.0-flash-exp',
+      model: 'seedsearch-ai-v1',
       tokenCount: text.split(' ').length, // Approximate word count
+      searchUsed: shouldSearch && webContext.length > 0, // Indicate if web search was used
     })
   } catch (error: any) {
-    console.error('Gemini API error:', error)
+    console.error('SeedSearch AI error:', error)
     
     return NextResponse.json(
       { 

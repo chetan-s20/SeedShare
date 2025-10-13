@@ -14,8 +14,22 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "SeedShare - Enhanced Seed Library & Marketplace",
-  description: "A unified digital ecosystem for seed sharing, expert guidance, and certified seed sales for farmers and urban gardeners.",
-  keywords: ["seeds", "agriculture", "farming", "gardening", "marketplace", "seed exchange"],
+  description: "A unified digital ecosystem for seed sharing, expert guidance, and certified seed sales for farmers and urban gardeners. Powered by SeedSearch AI.",
+  keywords: ["seeds", "agriculture", "farming", "gardening", "marketplace", "seed exchange", "AI assistant", "agricultural knowledge"],
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+    ],
+    apple: [
+      { url: '/apple-icon.svg', type: 'image/svg+xml' },
+    ],
+  },
+  metadataBase: new URL('https://seedshare.com'),
+  openGraph: {
+    title: "SeedShare - Enhanced Seed Library & Marketplace",
+    description: "Digital ecosystem for seed sharing with SeedSearch AI agricultural assistant",
+    type: "website",
+  },
 };
 
 export default async function RootLayout({

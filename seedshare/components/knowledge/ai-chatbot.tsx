@@ -33,10 +33,10 @@ const LANGUAGES = [
 ]
 
 const WELCOME_MESSAGES = {
-  english: "Hi! I'm your SeedShare AI assistant, powered by Gemini 2.5. I can help you with seed selection, planting techniques, pest control, soil management, and more. What would you like to know?",
-  hindi: "नमस्ते! मैं आपका SeedShare AI सहायक हूं, Gemini 2.5 द्वारा संचालित। मैं बीज चयन, रोपण तकनीक, कीट नियंत्रण, मिट्टी प्रबंधन आदि में आपकी मदद कर सकता हूं। आप क्या जानना चाहेंगे?",
-  punjabi: "ਸਤ ਸ੍ਰੀ ਅਕਾਲ! ਮੈਂ ਤੁਹਾਡਾ SeedShare AI ਸਹਾਇਕ ਹਾਂ, Gemini 2.5 ਦੁਆਰਾ ਸੰਚਾਲਿਤ। ਮੈਂ ਬੀਜ ਚੋਣ, ਬੀਜਾਈ ਤਕਨੀਕ, ਕੀੜੇ ਨਿਯੰਤਰਣ, ਮਿੱਟੀ ਪ੍ਰਬੰਧਨ ਆਦਿ ਵਿੱਚ ਤੁਹਾਡੀ ਮਦਦ ਕਰ ਸਕਦਾ ਹਾਂ। ਤੁਸੀਂ ਕੀ ਜਾਣਨਾ ਚਾਹੋਗੇ?",
-  haryanvi: "राम राम! मैं थारा SeedShare AI सहायक सूं, Gemini 2.5 तै चाल्लूं सूं। मैं बीज चुनण, बुवाई, कीड़े मारण, माट्टी सम्भालण म्ह थारी मदद कर सकूं सूं। थम के जाणणा चाओगे?"
+  english: "Hi! I'm your SeedSearch AI assistant. I can help you with seed selection, planting techniques, pest control, soil management, and more. What would you like to know?",
+  hindi: "नमस्ते! मैं आपका SeedSearch AI सहायक हूं। मैं बीज चयन, रोपण तकनीक, कीट नियंत्रण, मिट्टी प्रबंधन आदि में आपकी मदद कर सकता हूं। आप क्या जानना चाहेंगे?",
+  punjabi: "ਸਤ ਸ੍ਰੀ ਅਕਾਲ! ਮੈਂ ਤੁਹਾਡਾ SeedSearch AI ਸਹਾਇਕ ਹਾਂ। ਮੈਂ ਬੀਜ ਚੋਣ, ਬੀਜਾਈ ਤਕਨੀਕ, ਕੀੜੇ ਨਿਯੰਤਰਣ, ਮਿੱਟੀ ਪ੍ਰਬੰਧਨ ਆਦਿ ਵਿੱਚ ਤੁਹਾਡੀ ਮਦਦ ਕਰ ਸਕਦਾ ਹਾਂ। ਤੁਸੀਂ ਕੀ ਜਾਣਨਾ ਚਾਹੋਗੇ?",
+  haryanvi: "राम राम! मैं थारा SeedSearch AI सहायक सूं। मैं बीज चुनण, बुवाई, कीड़े मारण, माट्टी सम्भालण म्ह थारी मदद कर सकूं सूं। थम के जाणणा चाओगे?"
 }
 
 export function AIChatbot() {
@@ -56,15 +56,20 @@ export function AIChatbot() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
 
-  // Initialize conversation on mount
+  // Initialize by loading most recent conversation (don't create new one)
   useEffect(() => {
-    const initConversation = async () => {
-      const { conversation } = await createChatConversation(language)
-      if (conversation) {
-        setConversationId(conversation.id)
+    const loadRecentConversation = async () => {
+      const { getUserConversations } = await import('@/lib/supabase/ai-chat')
+      const { conversations } = await getUserConversations()
+      
+      if (conversations && conversations.length > 0) {
+        // Load most recent conversation
+        const recent = conversations[0]
+        await handleLoadConversation(recent.id)
       }
+      // If no conversations exist, user can click "New Chat" button
     }
-    initConversation()
+    loadRecentConversation()
   }, [])
 
   const scrollToBottom = () => {
@@ -93,9 +98,19 @@ export function AIChatbot() {
     setIsLoading(true)
 
     try {
+      // Create conversation if it doesn't exist (first message)
+      let currentConvId = conversationId
+      if (!currentConvId) {
+        const { conversation } = await createChatConversation(language)
+        if (conversation) {
+          currentConvId = conversation.id
+          setConversationId(currentConvId)
+        }
+      }
+
       // Save user message to database
-      if (conversationId) {
-        await saveMessage(conversationId, 'user', userContent)
+      if (currentConvId) {
+        await saveMessage(currentConvId, 'user', userContent)
       }
 
       const response = await fetch('/api/chat', {
@@ -131,11 +146,16 @@ export function AIChatbot() {
         timestamp: new Date(),
       }
 
+      // Add search indicator if web search was used
+      if (data.searchUsed) {
+        assistantMessage.content = `🌐 ${assistantMessage.content}`
+      }
+
       setMessages((prev) => [...prev, assistantMessage])
 
       // Save assistant response to database
-      if (conversationId) {
-        await saveMessage(conversationId, 'assistant', data.response.trim())
+      if (currentConvId) {
+        await saveMessage(currentConvId, 'assistant', data.response.trim())
       }
     } catch (error: any) {
       console.error('Chat error:', error)
@@ -201,19 +221,31 @@ export function AIChatbot() {
 
   const handleLoadConversation = async (id: string) => {
     const { conversation } = await getConversation(id)
-    if (conversation && conversation.messages) {
+    if (conversation) {
       setConversationId(id)
       setLanguage(conversation.language)
       
-      // Convert saved messages to UI format
-      const loadedMessages = conversation.messages.map((m) => ({
-        id: m.id,
-        role: m.role as 'user' | 'assistant',
-        content: m.content,
-        timestamp: new Date(m.created_at),
-      }))
-      
-      setMessages(loadedMessages)
+      if (conversation.messages && conversation.messages.length > 0) {
+        // Convert saved messages to UI format
+        const loadedMessages = conversation.messages.map((m) => ({
+          id: m.id,
+          role: m.role as 'user' | 'assistant',
+          content: m.content,
+          timestamp: new Date(m.created_at),
+        }))
+        
+        setMessages(loadedMessages)
+      } else {
+        // No messages yet, show welcome message
+        setMessages([
+          {
+            id: '1',
+            role: 'assistant',
+            content: WELCOME_MESSAGES[conversation.language as keyof typeof WELCOME_MESSAGES],
+            timestamp: new Date(),
+          },
+        ])
+      }
     }
   }
 
@@ -243,13 +275,13 @@ export function AIChatbot() {
             </div>
             <div>
               <CardTitle className="flex items-center gap-2">
-                AI Assistant
+                SeedSearch AI
                 <Badge variant="secondary" className="gap-1">
                   <Sparkles className="h-3 w-3" />
-                  Gemini 2.5
+                  AI Powered
                 </Badge>
               </CardTitle>
-              <p className="text-sm text-muted-foreground">Powered by Google Gemini</p>
+              <p className="text-sm text-muted-foreground">Smart Agricultural Assistant</p>
             </div>
           </div>
           <div className="flex items-center gap-2">

@@ -46,8 +46,8 @@ export default function KnowledgeHubPage() {
 
           {/* AI Chatbot Tab */}
           <TabsContent value="chatbot" className="space-y-4">
-            <div className="grid gap-6 lg:grid-cols-3">
-              <div className="lg:col-span-2">
+            <div className="grid gap-6 lg:grid-cols-4">
+              <div className="lg:col-span-3">
                 <AIChatbot />
               </div>
               
