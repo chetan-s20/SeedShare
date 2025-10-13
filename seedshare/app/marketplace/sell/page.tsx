@@ -94,7 +94,7 @@ function SellSeedPage() {
     }))
   }
 
-  const isBucketMissingError = (error: unknown) => {
+  const shouldFallbackToInlineStorage = (error: unknown) => {
     const message = typeof error === 'string'
       ? error.toLowerCase()
       : (typeof error === 'object' && error && 'message' in error)
@@ -108,8 +108,14 @@ function SellSeedPage() {
         : null
 
     return (
-      (status === '404') ||
-      (message.includes('bucket') && message.includes('not') && message.includes('found'))
+      status === '404' ||
+      status === '401' ||
+      status === '403' ||
+      message.includes('bucket not found') ||
+      message.includes('does not exist') ||
+      message.includes('not authorized') ||
+      message.includes('permission denied') ||
+      message.includes('row-level security')
     )
   }
 
@@ -224,8 +230,8 @@ function SellSeedPage() {
           } catch (uploadError) {
             console.error('Image upload error:', uploadError)
 
-            if (isBucketMissingError(uploadError) && !bucketMissingWarned) {
-              toast.warning('Storage bucket "product-images" is missing. Using inline images until it is created.')
+            if (shouldFallbackToInlineStorage(uploadError) && !bucketMissingWarned) {
+              toast.warning('Cannot upload to Supabase bucket "product-images" (missing or permission denied). Using inline images until storage is configured.')
               bucketMissingWarned = true
             }
 
@@ -255,7 +261,7 @@ function SellSeedPage() {
       }
 
       if (inlineFallbackCount > 0) {
-        toast.warning('Some images are stored inline. Please configure the "product-images" bucket in Supabase for optimal performance.')
+        toast.warning('Some images are stored inline. Configure the "product-images" bucket in Supabase (create it or adjust policies) for optimal performance.')
       }
 
       if (failedFiles.length > 0) {

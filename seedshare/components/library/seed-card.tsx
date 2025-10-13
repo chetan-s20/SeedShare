@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Leaf, MapPin } from 'lucide-react';
@@ -31,12 +32,14 @@ export default function SeedCard({ seed }: SeedCardProps) {
       <Card className="h-full transition-all hover:shadow-lg hover:-translate-y-1 cursor-pointer">
         <CardHeader className="pb-3">
           {/* Image */}
-          <div className="aspect-video bg-gradient-to-br from-green-100 to-blue-100 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
+          <div className="aspect-video bg-gradient-to-br from-green-100 to-blue-100 rounded-lg mb-3 flex items-center justify-center overflow-hidden relative">
             {seed.images && seed.images.length > 0 ? (
-              <img 
+              <Image 
                 src={seed.images[0]} 
                 alt={seed.common_name}
-                className="w-full h-full object-cover"
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               />
             ) : (
               <Leaf className="h-16 w-16 text-green-600" />

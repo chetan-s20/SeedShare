@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import Image from 'next/image';
 import { createClient } from '@/lib/supabase/server';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -79,12 +80,15 @@ export default async function SeedDetailPage({ params }: { params: Promise<{ id:
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="aspect-video bg-gray-200 rounded-lg mb-6 flex items-center justify-center">
+                <div className="aspect-video bg-gray-200 rounded-lg mb-6 flex items-center justify-center relative">
                   {seedData.images && seedData.images.length > 0 ? (
-                    <img 
+                    <Image 
                       src={seedData.images[0]} 
                       alt={seedData.common_name}
-                      className="w-full h-full object-cover rounded-lg"
+                      fill
+                      className="object-cover rounded-lg"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      priority
                     />
                   ) : (
                     <Leaf className="h-24 w-24 text-gray-400" />
@@ -264,11 +268,13 @@ export default async function SeedDetailPage({ params }: { params: Promise<{ id:
                   <CardTitle>QR Code</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center">
-                    <img 
+                  <div className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center relative">
+                    <Image 
                       src={seedData.qr_code_url} 
                       alt="Seed QR Code"
-                      className="w-full h-full object-contain p-4"
+                      fill
+                      className="object-contain p-4"
+                      sizes="(max-width: 768px) 33vw, 25vw"
                     />
                   </div>
                   <Button variant="outline" className="w-full mt-4">
