@@ -122,7 +122,7 @@ export default async function MarketplacePage({
                   >
                     <span className="text-sm">All Categories</span>
                   </Link>
-                  {categories.map((cat) => (
+                  {categories.map((cat: { name: string; count: number }) => (
                     <Link
                       key={cat.name}
                       href={`/marketplace?category=${cat.name}`}
@@ -215,7 +215,7 @@ export default async function MarketplacePage({
               </Card>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {products.map((product) => (
+                {products.map((product: any) => (
                   <MarketplaceProductCard key={product.id} product={product} />
                 ))}
               </div>

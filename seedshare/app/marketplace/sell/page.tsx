@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -25,6 +26,7 @@ import {
   ArrowLeft
 } from 'lucide-react'
 import Link from 'next/link'
+import { createMarketplaceProduct } from './actions'
 
 export default function SellSeedPage() {
   const router = useRouter()
@@ -74,19 +76,49 @@ export default function SellSeedPage() {
     setIsSubmitting(true)
 
     try {
-      // TODO: Implement Supabase submission
-      // This will be implemented with authentication
-      console.log('Form data:', formData)
-      console.log('Images:', images)
+      // Validate required fields
+      if (!formData.title || !formData.description || !formData.price || !formData.stock_quantity || !formData.seed_type) {
+        toast.error('Please fill in all required fields')
+        setIsSubmitting(false)
+        return
+      }
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      // Prepare product data matching database schema
+      const productData = {
+        name: formData.title,
+        variety: formData.variety || 'Standard',
+        category: formData.seed_type, // Maps seed_type to category
+        description: formData.description,
+        price: parseFloat(formData.price),
+        quantity_available: parseInt(formData.stock_quantity),
+        unit: formData.weight_per_pack || 'pack',
+        min_order_quantity: parseInt(formData.minimum_order) || 1,
+        germination_rate: formData.germination_rate ? parseFloat(formData.germination_rate) : undefined,
+        images: images,
+        tags: [
+          formData.is_organic ? 'organic' : null,
+          formData.is_heirloom ? 'heirloom' : null,
+          formData.is_hybrid ? 'hybrid' : null,
+          formData.growing_season || null,
+        ].filter(Boolean) as string[]
+      }
 
-      alert('Product listed successfully!')
-      router.push('/marketplace')
+      console.log('Submitting product:', productData)
+
+      // Call server action
+      const result = await createMarketplaceProduct(productData)
+
+      if (result.success) {
+        toast.success(result.message || 'Product listed successfully!')
+        router.push('/marketplace')
+        router.refresh()
+      } else {
+        toast.error(result.error || 'Failed to list product')
+        console.error('Error:', result.error)
+      }
     } catch (error) {
       console.error('Error submitting form:', error)
-      alert('Failed to list product. Please try again.')
+      toast.error('Failed to list product. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
