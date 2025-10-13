@@ -1,16 +1,22 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
-  const origin = requestUrl.origin
+  const next = requestUrl.searchParams.get('next') || '/'
 
   if (code) {
     const supabase = await createClient()
-    await supabase.auth.exchangeCodeForSession(code)
+    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    
+    if (!error) {
+      // Email confirmed successfully
+      return NextResponse.redirect(new URL(`/auth/login?confirmed=true`, requestUrl.origin))
+    }
   }
 
-  // URL to redirect to after sign in process completes
-  return NextResponse.redirect(`${origin}/dashboard`)
+  // Return error if no code or if exchange failed
+  return NextResponse.redirect(new URL('/auth/login?error=Could not confirm email', requestUrl.origin))
 }
