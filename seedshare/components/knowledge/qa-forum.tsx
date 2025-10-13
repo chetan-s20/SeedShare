@@ -1,13 +1,71 @@
 'use client'
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useState, useEffect } from 'react'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { MessageSquare, ThumbsUp, MessageCircle, Clock } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { MessageSquare, ThumbsUp, MessageCircle, Clock, Search, Filter } from 'lucide-react'
 import Link from 'next/link'
+import { getQuestions } from '@/app/knowledge/actions'
+import { formatDistanceToNow } from 'date-fns'
 
-// Mock Q&A data - will be replaced with real database queries
-const mockQuestions = [
+const categories = [
+  'All Questions',
+  'Seed Saving',
+  'Growing Tips',
+  'Pest Control',
+  'Soil Management',
+  'Organic Farming',
+  'Irrigation',
+  'Harvesting',
+]
+
+interface Question {
+  id: string
+  title: string
+  content: string
+  category: string
+  tags: string[]
+  upvotes: number
+  views: number
+  is_resolved: boolean
+  created_at: string
+  author: {
+    id: string
+    full_name: string
+    avatar_url: string | null
+  }
+  answer_count: Array<{ count: number }>
+}
+
+export function QAForum() {
+  const [questions, setQuestions] = useState<Question[]>([])
+  const [loading, setLoading] = useState(true)
+  const [selectedCategory, setSelectedCategory] = useState('All Questions')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [sortBy, setSortBy] = useState<'recent' | 'popular' | 'unanswered'>('recent')
+
+  useEffect(() => {
+    loadQuestions()
+  }, [selectedCategory, sortBy])
+
+  const loadQuestions = async () => {
+    setLoading(true)
+    const { questions: data } = await getQuestions({
+      category: selectedCategory,
+      searchQuery: searchQuery || undefined,
+      sortBy,
+    })
+    setQuestions(data as any)
+    setLoading(false)
+  }
+
+  const handleSearch = () => {
+    loadQuestions()
+  }
+
+  const mockQuestions = [
   {
     id: '1',
     title: 'Best organic fertilizer for tomatoes?',
@@ -53,11 +111,12 @@ const categories = [
   'Irrigation',
 ]
 
-export function QAForum() {
+  const displayQuestions = questions.length > 0 ? questions : mockQuestions
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h2 className="text-2xl font-bold">Community Q&A</h2>
           <p className="text-muted-foreground">
@@ -65,11 +124,50 @@ export function QAForum() {
           </p>
         </div>
         <Link href="/knowledge/ask">
-          <Button className="gap-2">
+          <Button className="gap-2 bg-green-600 hover:bg-green-700">
             <MessageSquare className="h-4 w-4" />
             Ask Question
           </Button>
         </Link>
+      </div>
+
+      {/* Search & Filter */}
+      <div className="flex gap-3 flex-wrap">
+        <div className="flex-1 min-w-[200px]">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search questions..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              className="pl-9"
+            />
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant={sortBy === 'recent' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSortBy('recent')}
+          >
+            Recent
+          </Button>
+          <Button
+            variant={sortBy === 'popular' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSortBy('popular')}
+          >
+            Popular
+          </Button>
+          <Button
+            variant={sortBy === 'unanswered' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSortBy('unanswered')}
+          >
+            Unanswered
+          </Button>
+        </div>
       </div>
 
       {/* Categories */}
@@ -77,17 +175,38 @@ export function QAForum() {
         {categories.map((category) => (
           <Badge
             key={category}
-            variant="outline"
+            variant={selectedCategory === category ? 'default' : 'outline'}
             className="cursor-pointer hover:bg-accent"
+            onClick={() => setSelectedCategory(category)}
           >
             {category}
           </Badge>
         ))}
       </div>
 
+      {/* Loading State */}
+      {loading && (
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">Loading questions...</p>
+        </div>
+      )}
+
       {/* Questions List */}
-      <div className="space-y-4">
-        {mockQuestions.map((question) => (
+      {!loading && (
+        <div className="space-y-4">
+          {displayQuestions.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <MessageSquare className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-lg font-semibold mb-2">No questions yet</h3>
+                <p className="text-muted-foreground mb-4">Be the first to ask a question!</p>
+                <Link href="/knowledge/ask">
+                  <Button>Ask a Question</Button>
+                </Link>
+              </CardContent>
+            </Card>
+          ) : (
+            displayQuestions.map((question) => (
           <Card key={question.id} className="hover:shadow-md transition-shadow">
             <CardContent className="p-6">
               <div className="flex gap-4">
@@ -112,16 +231,24 @@ export function QAForum() {
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1">
-                      <MessageCircle className="h-4 w-4" />
-                      {question.answers} answers
+                      <MessageSquare className="h-4 w-4" />
+                      {'answers' in question ? question.answers : 0} answers
                     </span>
                     <span className="flex items-center gap-1">
                       <Clock className="h-4 w-4" />
-                      {question.createdAt}
+                      {'createdAt' in question 
+                        ? question.createdAt 
+                        : formatDistanceToNow(new Date(question.created_at), { addSuffix: true })
+                      }
                     </span>
-                    <span>by {question.author}</span>
+                    <span>
+                      by {typeof question.author === 'string' 
+                        ? question.author 
+                        : question.author.full_name
+                      }
+                    </span>
                   </div>
 
                   <div className="flex gap-2 flex-wrap">
@@ -138,13 +265,10 @@ export function QAForum() {
               </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
-
-      {/* Load More */}
-      <div className="flex justify-center">
-        <Button variant="outline">Load More Questions</Button>
-      </div>
+            ))
+          )}
+        </div>
+      )}
     </div>
   )
 }
