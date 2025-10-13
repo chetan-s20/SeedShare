@@ -15,9 +15,24 @@ import {
   Sparkles,
   BookOpen,
   Video,
+  Leaf,
+  MapPin,
 } from 'lucide-react'
+import { createClient } from '@/lib/supabase/server'
 
-export default function HomePage() {
+export default async function HomePage() {
+  // Fetch recent seeds from database
+  const supabase = await createClient();
+  const { data: recentSeeds } = await supabase
+    .from('seeds')
+    .select(`
+      *,
+      owner:profiles(full_name, city, state)
+    `)
+    .eq('status', 'available')
+    .order('created_at', { ascending: false })
+    .limit(6);
+
   const features = [
     {
       icon: Sprout,
@@ -191,6 +206,87 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Recent Seeds from Library */}
+      {recentSeeds && recentSeeds.length > 0 && (
+        <section className="py-20 bg-white">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-between mb-12">
+              <div>
+                <h2 className="text-3xl font-bold text-gray-900 md:text-4xl">
+                  Recently Added Seeds
+                </h2>
+                <p className="mt-4 text-lg text-gray-600">
+                  Explore the latest seeds shared by our community
+                </p>
+              </div>
+              <Button asChild variant="outline">
+                <Link href="/library">
+                  View All
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {recentSeeds.map((seed: any) => (
+                <Link key={seed.id} href={`/library/${seed.id}`}>
+                  <Card className="h-full transition-all hover:shadow-lg hover:-translate-y-1">
+                    <CardHeader className="pb-3">
+                      <div className="aspect-video bg-gradient-to-br from-green-100 to-blue-100 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
+                        {seed.images && seed.images.length > 0 ? (
+                          <img 
+                            src={seed.images[0]} 
+                            alt={seed.common_name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Leaf className="h-16 w-16 text-green-600" />
+                        )}
+                      </div>
+                      <div className="flex items-start justify-between gap-2">
+                        <CardTitle className="text-lg line-clamp-1">
+                          {seed.common_name}
+                        </CardTitle>
+                        <div className="flex gap-1 flex-shrink-0">
+                          {seed.is_organic && (
+                            <Badge variant="default" className="text-xs bg-green-600">
+                              Organic
+                            </Badge>
+                          )}
+                          {seed.is_heirloom && (
+                            <Badge variant="secondary" className="text-xs">
+                              Heirloom
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      <CardDescription className="line-clamp-1">
+                        {seed.variety}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <div className="flex items-center text-sm text-gray-600">
+                        <MapPin className="mr-1 h-4 w-4" />
+                        <span className="truncate">
+                          {seed.owner?.city && seed.owner?.state 
+                            ? `${seed.owner.city}, ${seed.owner.state}`
+                            : seed.origin}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600">{seed.category}</span>
+                        <Badge variant="outline" className="text-xs">
+                          {seed.quantity} {seed.unit}
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Benefits Section */}
       <section className="bg-gray-50 py-20">
