@@ -32,7 +32,7 @@ export default function SeedCard({ seed }: SeedCardProps) {
       <Card className="h-full transition-all hover:shadow-lg hover:-translate-y-1 cursor-pointer">
         <CardHeader className="pb-3">
           {/* Image */}
-          <div className="aspect-video bg-gradient-to-br from-green-100 to-blue-100 rounded-lg mb-3 flex items-center justify-center overflow-hidden relative">
+          <div className="aspect-video bg-gradient-to-br from-green-100 to-blue-100 dark:from-green-950 dark:to-blue-950 rounded-lg mb-3 flex items-center justify-center overflow-hidden relative">
             {seed.images && seed.images.length > 0 ? (
               <Image 
                 src={seed.images[0]} 
@@ -42,7 +42,7 @@ export default function SeedCard({ seed }: SeedCardProps) {
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               />
             ) : (
-              <Leaf className="h-16 w-16 text-green-600" />
+              <Leaf className="h-16 w-16 text-green-600 dark:text-green-500" />
             )}
           </div>
 
@@ -73,7 +73,7 @@ export default function SeedCard({ seed }: SeedCardProps) {
 
         <CardContent className="space-y-2">
           {/* Location */}
-          <div className="flex items-center text-sm text-gray-600">
+          <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
             <MapPin className="mr-1 h-4 w-4 flex-shrink-0" />
             <span className="truncate">
               {seed.owner?.city && seed.owner?.state 
@@ -84,7 +84,7 @@ export default function SeedCard({ seed }: SeedCardProps) {
 
           {/* Category and Quantity */}
           <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600">{seed.category}</span>
+            <span className="text-gray-600 dark:text-gray-400">{seed.category}</span>
             <Badge variant="outline" className="text-xs">
               {seed.quantity} {seed.unit}
             </Badge>

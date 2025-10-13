@@ -45,7 +45,7 @@ export default async function SeedDetailPage({ params }: { params: Promise<{ id:
   const isOwner = user?.id === seedData.owner_id;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 py-12">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 dark:from-slate-950 dark:to-slate-900 py-12">
       <div className="container mx-auto px-4 max-w-6xl">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
@@ -59,7 +59,7 @@ export default async function SeedDetailPage({ params }: { params: Promise<{ id:
                       {seedData.common_name} - {seedData.variety}
                     </CardTitle>
                     {seedData.scientific_name && (
-                      <p className="text-gray-600 italic">{seedData.scientific_name}</p>
+                      <p className="text-gray-600 dark:text-gray-400 italic">{seedData.scientific_name}</p>
                     )}
                   </div>
                   <div className="flex gap-2">
@@ -99,62 +99,62 @@ export default async function SeedDetailPage({ params }: { params: Promise<{ id:
                 {seedData.description && (
                   <div className="mb-6">
                     <h3 className="font-semibold text-lg mb-2">Description</h3>
-                    <p className="text-gray-700">{seedData.description}</p>
+                    <p className="text-gray-700 dark:text-gray-300">{seedData.description}</p>
                   </div>
                 )}
 
                 {/* Specifications Grid */}
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   <div className="flex items-center gap-2">
-                    <MapPin className="h-5 w-5 text-gray-600" />
+                    <MapPin className="h-5 w-5 text-gray-600 dark:text-gray-400" />
                     <div>
-                      <p className="text-sm text-gray-500">Origin</p>
-                      <p className="font-medium">{seedData.origin}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Origin</p>
+                      <p className="font-medium dark:text-gray-200">{seedData.origin}</p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5 text-gray-600" />
+                    <Calendar className="h-5 w-5 text-gray-600 dark:text-gray-400" />
                     <div>
-                      <p className="text-sm text-gray-500">Harvest Year</p>
-                      <p className="font-medium">{seedData.harvest_year}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Harvest Year</p>
+                      <p className="font-medium dark:text-gray-200">{seedData.harvest_year}</p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <Package className="h-5 w-5 text-gray-600" />
+                    <Package className="h-5 w-5 text-gray-600 dark:text-gray-400" />
                     <div>
-                      <p className="text-sm text-gray-500">Quantity</p>
-                      <p className="font-medium">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Quantity</p>
+                      <p className="font-medium dark:text-gray-200">
                         {seedData.quantity} {seedData.unit}
                       </p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <Leaf className="h-5 w-5 text-gray-600" />
+                    <Leaf className="h-5 w-5 text-gray-600 dark:text-gray-400" />
                     <div>
-                      <p className="text-sm text-gray-500">Category</p>
-                      <p className="font-medium">{seedData.category}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Category</p>
+                      <p className="font-medium dark:text-gray-200">{seedData.category}</p>
                     </div>
                   </div>
 
                   {seedData.germination_rate && (
                     <div className="flex items-center gap-2">
-                      <Gauge className="h-5 w-5 text-gray-600" />
+                      <Gauge className="h-5 w-5 text-gray-600 dark:text-gray-400" />
                       <div>
-                        <p className="text-sm text-gray-500">Germination</p>
-                        <p className="font-medium">{seedData.germination_rate}%</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Germination</p>
+                        <p className="font-medium dark:text-gray-200">{seedData.germination_rate}%</p>
                       </div>
                     </div>
                   )}
 
                   {seedData.purity && (
                     <div className="flex items-center gap-2">
-                      <Droplet className="h-5 w-5 text-gray-600" />
+                      <Droplet className="h-5 w-5 text-gray-600 dark:text-gray-400" />
                       <div>
-                        <p className="text-sm text-gray-500">Purity</p>
-                        <p className="font-medium">{seedData.purity}%</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Purity</p>
+                        <p className="font-medium dark:text-gray-200">{seedData.purity}%</p>
                       </div>
                     </div>
                   )}
@@ -162,9 +162,9 @@ export default async function SeedDetailPage({ params }: { params: Promise<{ id:
 
                 {/* Treatment */}
                 {seedData.treatment && (
-                  <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                    <p className="text-sm text-gray-600">Treatment</p>
-                    <p className="font-medium">{seedData.treatment}</p>
+                  <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Treatment</p>
+                    <p className="font-medium dark:text-gray-200">{seedData.treatment}</p>
                   </div>
                 )}
               </CardContent>
@@ -178,8 +178,8 @@ export default async function SeedDetailPage({ params }: { params: Promise<{ id:
               <CardContent>
                 <div className="space-y-3">
                   <div>
-                    <p className="text-sm text-gray-500">Added on</p>
-                    <p className="font-medium">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Added on</p>
+                    <p className="font-medium dark:text-gray-200">
                       {new Date(seedData.created_at).toLocaleDateString('en-IN', {
                         year: 'numeric',
                         month: 'long',
@@ -188,8 +188,8 @@ export default async function SeedDetailPage({ params }: { params: Promise<{ id:
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Last updated</p>
-                    <p className="font-medium">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Last updated</p>
+                    <p className="font-medium dark:text-gray-200">
                       {new Date(seedData.updated_at).toLocaleDateString('en-IN', {
                         year: 'numeric',
                         month: 'long',
@@ -220,22 +220,22 @@ export default async function SeedDetailPage({ params }: { params: Promise<{ id:
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-semibold">{owner?.full_name || 'Anonymous'}</p>
-                    <p className="text-sm text-gray-600">
+                    <p className="font-semibold dark:text-white">{owner?.full_name || 'Anonymous'}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
                       {owner?.location || 'Location not specified'}
                     </p>
                   </div>
                 </div>
 
                 {owner?.bio && (
-                  <p className="text-sm text-gray-700 mb-4">{owner.bio}</p>
+                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">{owner.bio}</p>
                 )}
 
                 <div className="flex items-center gap-4 text-sm">
                   <div className="flex items-center gap-1">
-                    <Award className="h-4 w-4 text-yellow-600" />
-                    <span className="font-medium">{owner?.points || 0}</span>
-                    <span className="text-gray-600">points</span>
+                    <Award className="h-4 w-4 text-yellow-600 dark:text-yellow-500" />
+                    <span className="font-medium dark:text-gray-200">{owner?.points || 0}</span>
+                    <span className="text-gray-600 dark:text-gray-400">points</span>
                   </div>
                 </div>
 
@@ -268,7 +268,7 @@ export default async function SeedDetailPage({ params }: { params: Promise<{ id:
                   <CardTitle>QR Code</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center relative">
+                  <div className="aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center relative">
                     <Image 
                       src={seedData.qr_code_url} 
                       alt="Seed QR Code"
@@ -292,7 +292,7 @@ export default async function SeedDetailPage({ params }: { params: Promise<{ id:
               <CardContent>
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Status</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Status</span>
                     <Badge variant={
                       seedData.status === 'available' ? 'default' : 
                       seedData.status === 'reserved' ? 'secondary' : 
@@ -302,8 +302,8 @@ export default async function SeedDetailPage({ params }: { params: Promise<{ id:
                     </Badge>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Quantity</span>
-                    <span className="font-medium">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Quantity</span>
+                    <span className="font-medium dark:text-gray-200">
                       {seedData.quantity} {seedData.unit}
                     </span>
                   </div>

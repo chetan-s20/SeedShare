@@ -74,19 +74,19 @@ export default async function SeedLibraryPage() {
       {/* Seeds Grid */}
       <div className="container mx-auto px-4 py-12">
         {error ? (
-          <Card className="border-red-200 bg-red-50">
+          <Card className="border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800">
             <CardContent className="pt-6">
-              <p className="text-red-700">Error loading seeds: {error.message}</p>
+              <p className="text-red-700 dark:text-red-400">Error loading seeds: {error.message}</p>
             </CardContent>
           </Card>
         ) : !seeds || seeds.length === 0 ? (
           <Card className="text-center py-12">
             <CardContent>
-              <Leaf className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-700 mb-2">
+              <Leaf className="h-16 w-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2">
                 No seeds available yet
               </h3>
-              <p className="text-gray-600 mb-4">
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
                 Be the first to add seeds to the library!
               </p>
               <Button asChild>
@@ -138,17 +138,17 @@ export default async function SeedLibraryPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2 text-sm">
-                      <div className="flex items-center text-gray-600">
+                      <div className="flex items-center text-gray-600 dark:text-gray-400">
                         <MapPin className="h-4 w-4 mr-1" />
                         {seed.owner?.city || seed.origin}
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-600">Category:</span>
+                        <span className="text-gray-600 dark:text-gray-400">Category:</span>
                         <Badge variant="outline">{seed.category}</Badge>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-600">Quantity:</span>
-                        <span className="font-medium">{seed.quantity} {seed.unit}</span>
+                        <span className="text-gray-600 dark:text-gray-400">Quantity:</span>
+                        <span className="font-medium dark:text-gray-300">{seed.quantity} {seed.unit}</span>
                       </div>
                     </div>
                   </CardContent>
