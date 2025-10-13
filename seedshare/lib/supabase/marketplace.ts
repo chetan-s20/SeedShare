@@ -191,10 +191,10 @@ export async function fetchProductById(productId: string) {
   }
 
   // Increment view count
-  await supabase
+  (await supabase
     .from('marketplace_products')
-    .update({ views: (data.views || 0) + 1 })
-    .eq('id', productId)
+    .update({ views: ((data as any).views || 0) + 1 } as any)
+    .eq('id', productId)) as any
 
   return { product: data as MarketplaceProduct, error: null }
 }
@@ -245,16 +245,16 @@ export async function createOrder(orderData: {
     return { order: null, error: new Error('User not authenticated') }
   }
 
-  const { data, error } = await supabase
+  const { data, error } = (await supabase
     .from('marketplace_orders')
     .insert({
       buyer_id: user.id,
       ...orderData,
       status: 'pending',
       payment_status: 'pending'
-    })
+    } as any)
     .select()
-    .single()
+    .single()) as any
 
   if (error) {
     console.error('Error creating order:', error)
@@ -262,10 +262,10 @@ export async function createOrder(orderData: {
   }
 
   // Update product sales count and stock
-  const { error: updateError } = await supabase.rpc('update_product_after_order', {
+  const { error: updateError } = (await supabase.rpc('update_product_after_order', {
     p_product_id: orderData.product_id,
     p_quantity: orderData.quantity
-  })
+  } as any)) as any
 
   if (updateError) {
     console.error('Error updating product stats:', updateError)
@@ -296,22 +296,23 @@ export async function addToCart(productId: string, quantity: number) {
 
   if (existing) {
     // Update quantity
-    const { error } = await supabase
+    const result: any = await supabase
       .from('marketplace_cart')
-      .update({ quantity: existing.quantity + quantity })
-      .eq('id', existing.id)
+      .update({ quantity: (existing as any).quantity + quantity } as any)
+      .eq('id', (existing as any).id)
+    const { error } = result
 
     return { error }
   }
 
   // Insert new cart item
-  const { error } = await supabase
+  const { error } = (await supabase
     .from('marketplace_cart')
     .insert({
       user_id: user.id,
       product_id: productId,
       quantity
-    })
+    } as any)) as any
 
   return { error }
 }
@@ -356,15 +357,15 @@ export async function addProduct(productData: Partial<MarketplaceProduct>) {
     return { product: null, error: new Error('User not authenticated') }
   }
 
-  const { data, error } = await supabase
+  const { data, error } = (await supabase
     .from('marketplace_products')
     .insert({
       seller_id: user.id,
       ...productData,
       status: 'active'
-    })
+    } as any)
     .select()
-    .single()
+    .single()) as any
 
   if (error) {
     console.error('Error adding product:', error)
@@ -428,15 +429,15 @@ export async function getOrCreateSellerProfile() {
   }
 
   // Create new seller profile
-  const { data, error } = await supabase
+  const { data, error } = (await supabase
     .from('marketplace_sellers')
     .insert({
       user_id: user.id,
       full_name: user.user_metadata?.full_name || 'Anonymous Seller',
       email: user.email || ''
-    })
+    } as any)
     .select()
-    .single()
+    .single()) as any
 
   if (error) {
     console.error('Error creating seller profile:', error)

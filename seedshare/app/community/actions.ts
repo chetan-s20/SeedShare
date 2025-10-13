@@ -154,11 +154,12 @@ export async function votePost(postId: string, voteType: 'up' | 'down') {
       if (error) return { success: false, error: error.message }
     } else {
       // Change vote
-      const { error } = await supabase
+      const result: any = await supabase
         .from('post_votes')
         .update({ vote_type: voteType } as any)
         .eq('post_id', postId)
         .eq('user_id', user.id)
+      const { error } = result
       
       if (error) return { success: false, error: error.message }
     }
@@ -264,7 +265,7 @@ export async function createPost(formData: {
     .single()
   
   if (profile) {
-    await supabase
+    const result: any = await supabase
       .from('profiles')
       .update({ points: ((profile as any).points || 0) + 10 } as any)
       .eq('id', user.id)

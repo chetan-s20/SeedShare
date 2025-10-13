@@ -18,9 +18,10 @@ import { getCommunityPosts } from './actions'
 export default async function CommunityPage({
   searchParams,
 }: {
-  searchParams: { sort?: 'hot' | 'new' | 'top' | 'rising' }
+  searchParams: Promise<{ sort?: 'hot' | 'new' | 'top' | 'rising' }>
 }) {
-  const sortBy = searchParams.sort || 'hot'
+  const params = await searchParams;
+  const sortBy = params.sort || 'hot'
   const { posts, error } = await getCommunityPosts(sortBy)
 
   return (

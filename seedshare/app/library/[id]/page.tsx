@@ -18,7 +18,8 @@ import {
 import Link from 'next/link';
 import RequestSeedButton from '@/components/library/request-seed-button';
 
-export default async function SeedDetailPage({ params }: { params: { id: string } }) {
+export default async function SeedDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const supabase = await createClient();
 
   // Fetch seed with owner profile
@@ -28,7 +29,7 @@ export default async function SeedDetailPage({ params }: { params: { id: string 
       *,
       owner:profiles(*)
     `)
-    .eq('id', params.id)
+    .eq('id', id)
     .single();
 
   if (error || !seed) {
@@ -237,7 +238,7 @@ export default async function SeedDetailPage({ params }: { params: { id: string 
                 <div className="mt-4 flex gap-2">
                   {!isOwner ? (
                     <>
-                      <RequestSeedButton seedId={params.id} seedName={seedData.common_name} />
+                      <RequestSeedButton seedId={id} seedName={seedData.common_name} />
                       <Button variant="outline" size="sm" className="flex-1" asChild>
                         <Link href={`/messages/${owner?.id}`}>
                           <MessageSquare className="mr-2 h-4 w-4" />
@@ -247,7 +248,7 @@ export default async function SeedDetailPage({ params }: { params: { id: string 
                     </>
                   ) : (
                     <Button variant="outline" className="w-full" asChild>
-                      <Link href={`/library/${params.id}/edit`}>
+                      <Link href={`/library/${id}/edit`}>
                         Edit Seed
                       </Link>
                     </Button>
