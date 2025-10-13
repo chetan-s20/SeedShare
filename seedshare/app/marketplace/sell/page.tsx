@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -23,12 +23,32 @@ import {
   Leaf,
   Upload,
   CheckCircle2,
-  ArrowLeft
+  ArrowLeft,
+  Loader2,
+  X
 } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
+import dynamic from 'next/dynamic'
 import { createMarketplaceProduct } from './actions'
+import { createClient } from '@/lib/supabase/client'
+import { cn } from '@/lib/utils'
 
-export default function SellSeedPage() {
+type UploadedImage = {
+  path: string | null
+  url: string
+  source: 'storage' | 'inline'
+}
+
+const readFileAsDataUrl = (file: File) =>
+  new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = () => reject(reader.error || new Error('Failed to read file'))
+    reader.readAsDataURL(file)
+  })
+
+function SellSeedPage() {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
@@ -50,7 +70,10 @@ export default function SellSeedPage() {
     harvest_time: '',
   })
 
-  const [images, setImages] = useState<string[]>([])
+  const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([])
+  const [isDragging, setIsDragging] = useState(false)
+  const [isUploadingImages, setIsUploadingImages] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -71,8 +94,234 @@ export default function SellSeedPage() {
     }))
   }
 
+  const isBucketMissingError = (error: unknown) => {
+    const message = typeof error === 'string'
+      ? error.toLowerCase()
+      : (typeof error === 'object' && error && 'message' in error)
+        ? String((error as any).message ?? '').toLowerCase()
+        : ''
+
+    const status = (typeof error === 'object' && error && 'statusCode' in error)
+      ? String((error as any).statusCode)
+      : (typeof error === 'object' && error && 'status' in error)
+        ? String((error as any).status)
+        : null
+
+    return (
+      (status === '404') ||
+      (message.includes('bucket') && message.includes('not') && message.includes('found'))
+    )
+  }
+
+  const handleFilesUpload = async (files: File[]) => {
+    if (!files.length) return
+
+    const remainingSlots = 5 - uploadedImages.length
+    if (remainingSlots <= 0) {
+      toast.error('You can upload up to 5 images per product.')
+      return
+    }
+
+    setIsUploadingImages(true)
+
+    const validFiles = files
+      .filter((file) => {
+        if (!file.type.startsWith('image/')) {
+          toast.error(`${file.name} is not a supported image type.`)
+          return false
+        }
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error(`${file.name} exceeds the 5MB size limit.`)
+          return false
+        }
+        return true
+      })
+      .slice(0, remainingSlots)
+
+    if (files.length > remainingSlots) {
+      toast.warning(`You can upload ${remainingSlots} more image${remainingSlots === 1 ? '' : 's'} only.`)
+    }
+
+    if (!validFiles.length) {
+      setIsUploadingImages(false)
+      return
+    }
+
+    let supabase = null as ReturnType<typeof createClient> | null
+    try {
+      supabase = createClient()
+    } catch (clientError) {
+      console.error('Supabase client initialization failed:', clientError)
+      toast.warning('Supabase storage is not configured. Using inline images instead.')
+    }
+
+    let userId: string | null = null
+
+    if (supabase) {
+      try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+        if (authError || !user) {
+          toast.error('Please log in to upload images.')
+          setIsUploadingImages(false)
+          return
+        }
+
+        userId = user.id
+      } catch (authCheckError) {
+        console.error('Failed to verify Supabase user:', authCheckError)
+        toast.error('Unable to verify your session. Please log in again.')
+        setIsUploadingImages(false)
+        return
+      }
+    }
+
+    try {
+      const uploads: UploadedImage[] = []
+      const failedFiles: string[] = []
+      let inlineFallbackCount = 0
+      let bucketMissingWarned = false
+
+      for (const file of validFiles) {
+        let storedInSupabase = false
+
+        if (supabase && userId) {
+          const extension = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+          const baseName = file.name.replace(/\.[^/.]+$/, '')
+          const sanitizedBaseName = baseName.replace(/[^a-zA-Z0-9-_]/g, '-').toLowerCase() || 'image'
+          const uniqueToken = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+            ? crypto.randomUUID()
+            : Math.random().toString(36).slice(2, 10)
+          const filePath = `${userId}/product-${uniqueToken}-${sanitizedBaseName}.${extension}`
+
+          try {
+            const { error: uploadError } = await supabase.storage
+              .from('product-images')
+              .upload(filePath, file, {
+                cacheControl: '3600',
+                upsert: false,
+                contentType: file.type || 'image/jpeg'
+              })
+
+            if (uploadError) {
+              throw uploadError
+            }
+
+            const { data: publicUrlData } = supabase.storage
+              .from('product-images')
+              .getPublicUrl(filePath)
+
+            if (!publicUrlData?.publicUrl) {
+              throw new Error('Failed to resolve public URL for uploaded image.')
+            }
+
+            uploads.push({
+              path: filePath,
+              url: publicUrlData.publicUrl,
+              source: 'storage'
+            })
+            storedInSupabase = true
+          } catch (uploadError) {
+            console.error('Image upload error:', uploadError)
+
+            if (isBucketMissingError(uploadError) && !bucketMissingWarned) {
+              toast.warning('Storage bucket "product-images" is missing. Using inline images until it is created.')
+              bucketMissingWarned = true
+            }
+
+            // fall back to inline image storage for this file
+          }
+        }
+
+        if (!storedInSupabase) {
+          try {
+            const dataUrl = await readFileAsDataUrl(file)
+            uploads.push({
+              path: null,
+              url: dataUrl,
+              source: 'inline'
+            })
+            inlineFallbackCount += 1
+          } catch (fileReadError) {
+            console.error('Failed to convert file to data URL:', fileReadError)
+            failedFiles.push(file.name)
+          }
+        }
+      }
+
+      if (uploads.length) {
+        setUploadedImages((prev) => [...prev, ...uploads])
+        toast.success(`${uploads.length} image${uploads.length > 1 ? 's' : ''} ready.`)
+      }
+
+      if (inlineFallbackCount > 0) {
+        toast.warning('Some images are stored inline. Please configure the "product-images" bucket in Supabase for optimal performance.')
+      }
+
+      if (failedFiles.length > 0) {
+        toast.error(`Could not process: ${failedFiles.join(', ')}`)
+      }
+    } catch (error) {
+      console.error('Failed to process images:', error)
+      toast.error('Failed to process images. Please try again.')
+    } finally {
+      setIsUploadingImages(false)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
+
+  const handleRemoveImage = async (image: UploadedImage) => {
+    if (image.source === 'storage' && image.path) {
+      let supabase: ReturnType<typeof createClient> | null = null
+      try {
+        supabase = createClient()
+      } catch (clientError) {
+        console.error('Supabase client initialization failed:', clientError)
+        toast.error('Unable to connect to storage. Please check your configuration.')
+        return
+      }
+
+      try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+        if (authError || !user) {
+          toast.error('Please log in to remove stored images.')
+          return
+        }
+
+        const { error } = await supabase.storage
+          .from('product-images')
+          .remove([image.path])
+
+        if (error) {
+          throw error
+        }
+
+        setUploadedImages((prev) => prev.filter((item) => item.path !== image.path))
+        toast.success('Image removed from storage.')
+      } catch (error) {
+        console.error('Failed to remove image from storage:', error)
+        toast.error('Could not remove image from storage. Please try again.')
+      }
+
+      return
+    }
+
+    // Inline images can be removed locally without contacting Supabase
+    setUploadedImages((prev) => prev.filter((item) => item.url !== image.url))
+    toast.success('Image removed.')
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (isUploadingImages) {
+      toast.warning('Please wait for image uploads to finish before submitting.')
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
@@ -94,7 +343,7 @@ export default function SellSeedPage() {
         unit: formData.weight_per_pack || 'pack',
         min_order_quantity: parseInt(formData.minimum_order) || 1,
         germination_rate: formData.germination_rate ? parseFloat(formData.germination_rate) : undefined,
-        images: images,
+        images: uploadedImages.map((image) => image.url),
         tags: [
           formData.is_organic ? 'organic' : null,
           formData.is_heirloom ? 'heirloom' : null,
@@ -431,34 +680,89 @@ export default function SellSeedPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="border-2 border-dashed dark:border-gray-700 rounded-lg p-8 text-center hover:border-green-500 dark:hover:border-green-500 transition-colors cursor-pointer">
-                <Upload className="h-12 w-12 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                  Click to upload or drag and drop
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-500">
-                  PNG, JPG, JPEG up to 5MB each
-                </p>
+              <div
+                className={cn(
+                  'border-2 border-dashed dark:border-gray-700 rounded-lg p-8 text-center transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500',
+                  isDragging && 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                )}
+                role="button"
+                tabIndex={0}
+                onClick={() => fileInputRef.current?.click()}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault()
+                    fileInputRef.current?.click()
+                  }
+                }}
+                onDragOver={(event) => {
+                  event.preventDefault()
+                  setIsDragging(true)
+                }}
+                onDragLeave={(event) => {
+                  event.preventDefault()
+                  setIsDragging(false)
+                }}
+                onDrop={(event) => {
+                  event.preventDefault()
+                  setIsDragging(false)
+                  const files = Array.from(event.dataTransfer?.files || [])
+                  void handleFilesUpload(files)
+                }}
+              >
+                <div className="flex flex-col items-center">
+                  {isUploadingImages ? (
+                    <Loader2 className="h-12 w-12 text-green-500 animate-spin mb-4" />
+                  ) : (
+                    <Upload className="h-12 w-12 text-gray-400 dark:text-gray-600 mb-4" />
+                  )}
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                    {isUploadingImages ? 'Uploading images...' : 'Click to upload or drag and drop'}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500">
+                    PNG, JPG, JPEG up to 5MB each
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500">
+                    {uploadedImages.length} / 5 images uploaded
+                  </p>
+                </div>
                 <Input
+                  ref={fileInputRef}
+                  id="product-images"
                   type="file"
                   accept="image/*"
                   multiple
+                  disabled={isUploadingImages}
                   className="hidden"
-                  onChange={(e) => {
-                    // Handle file upload
-                    const files = Array.from(e.target.files || [])
-                    console.log('Files:', files)
+                  onChange={(event) => {
+                    const files = Array.from(event.target.files || [])
+                    void handleFilesUpload(files)
                   }}
                 />
               </div>
-              {images.length > 0 && (
-                <div className="grid grid-cols-5 gap-3 mt-4">
-                  {images.map((image, index) => (
+              {uploadedImages.length > 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mt-4">
+                  {uploadedImages.map((image, index) => (
                     <div
-                      key={index}
-                      className="aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg"
+                      key={image.path ?? `${image.url}-${index}`}
+                      className="relative aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden border dark:border-gray-700"
                     >
-                      {/* Preview images here */}
+                      <Image
+                        src={image.url}
+                        alt={`Uploaded product image ${index + 1}`}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 50vw, 120px"
+                        unoptimized
+                      />
+                      <button
+                        type="button"
+                        className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
+                        onClick={() => handleRemoveImage(image)}
+                        aria-label={`Remove image ${index + 1}`}
+                        disabled={isUploadingImages}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -506,3 +810,5 @@ export default function SellSeedPage() {
     </div>
   )
 }
+
+export default dynamic(() => Promise.resolve(SellSeedPage), { ssr: false })
