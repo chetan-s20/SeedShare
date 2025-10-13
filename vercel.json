@@ -1,5 +1,15 @@
 {
-  "buildCommand": "pnpm run build",
-  "installCommand": "pnpm install",
-  "framework": "nextjs"
+  "version": 2,
+  "builds": [
+    {
+      "src": "seedshare/package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "seedshare/$1"
+    }
+  ]
 }
