@@ -55,7 +55,15 @@ export async function uploadQRCode(
         upsert: true,
       });
 
-    if (error) throw error;
+    if (error) {
+      // If bucket doesn't exist, log warning and return data URL
+      if (error.message?.includes('Bucket not found')) {
+        console.warn('QR codes bucket not found. Please create it in Supabase Dashboard.');
+        console.warn('Returning data URL instead of uploaded URL.');
+        return qrCodeDataUrl;
+      }
+      throw error;
+    }
 
     // Get public URL
     const { data: publicUrlData } = supabase.storage
@@ -65,7 +73,9 @@ export async function uploadQRCode(
     return publicUrlData.publicUrl;
   } catch (error) {
     console.error('Error uploading QR code:', error);
-    throw new Error('Failed to upload QR code');
+    // Return data URL as fallback
+    console.warn('Falling back to data URL for QR code');
+    return qrCodeDataUrl;
   }
 }
 
@@ -81,17 +91,26 @@ export async function createSeedQRCode(
     owner_id: string;
   }
 ): Promise<string> {
-  // Generate QR code
-  const qrCodeDataUrl = await generateSeedQRCode(seedId, seedData);
+  try {
+    // Generate QR code
+    const qrCodeDataUrl = await generateSeedQRCode(seedId, seedData);
 
-  // Upload to storage
-  const publicUrl = await uploadQRCode(supabase, seedId, qrCodeDataUrl);
+    // Upload to storage (will return data URL if bucket doesn't exist)
+    const publicUrl = await uploadQRCode(supabase, seedId, qrCodeDataUrl);
 
-  // Update seed with QR code URL
-  await supabase
-    .from('seeds')
-    .update({ qr_code_url: publicUrl })
-    .eq('id', seedId);
+    // Update seed with QR code URL
+    const { error } = await supabase
+      .from('seeds')
+      .update({ qr_code_url: publicUrl })
+      .eq('id', seedId);
 
-  return publicUrl;
+    if (error) {
+      console.error('Error updating seed with QR code URL:', error);
+    }
+
+    return publicUrl;
+  } catch (error) {
+    console.error('Error in createSeedQRCode:', error);
+    throw error;
+  }
 }
