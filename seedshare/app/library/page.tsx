@@ -40,7 +40,7 @@ export default async function SeedLibraryPage() {
                   Add Your Seeds
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 dark:border-gray-600 dark:hover:bg-gray-800" asChild>
+              <Button size="lg" className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-green-600 dark:border-gray-400 dark:hover:bg-gray-800 dark:hover:text-white font-semibold" asChild>
                 <Link href="/library/requests">
                   My Requests
                 </Link>
@@ -56,10 +56,10 @@ export default async function SeedLibraryPage() {
           <CardContent className="pt-6">
             <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1 relative">
-                <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400 dark:text-gray-500" />
                 <Input
                   placeholder="Search seeds by name, variety, or category..."
-                  className="pl-10 h-12"
+                  className="pl-10 h-12 dark:bg-gray-800 dark:border-gray-700 placeholder:text-gray-500 dark:placeholder:text-gray-400"
                 />
               </div>
               <Button variant="outline" className="h-12">
@@ -100,7 +100,7 @@ export default async function SeedLibraryPage() {
         ) : (
           <>
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                 Available Seeds ({seeds.length})
               </h2>
             </div>

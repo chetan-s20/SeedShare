@@ -322,13 +322,13 @@ export default async function HomePage() {
             Join thousands of farmers and gardeners already growing together
           </p>
           <div className="mt-8 flex flex-col justify-center space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">
-            <Button size="lg" variant="secondary" asChild>
+            <Button size="lg" className="bg-white text-green-600 hover:bg-gray-100 font-semibold shadow-lg" asChild>
               <Link href="/signup">
                 Create Free Account
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
-            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10" asChild>
+            <Button size="lg" className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-green-600 font-semibold shadow-lg" asChild>
               <Link href="/about">
                 <BookOpen className="mr-2 h-4 w-4" />
                 Learn More
