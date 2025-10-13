@@ -42,7 +42,7 @@ export default async function ProfilePage() {
   const { count: seedsCount } = await supabase
     .from('seeds')
     .select('*', { count: 'exact', head: true })
-    .eq('user_id', user.id)
+    .eq('owner_id', user.id)
 
   const { count: exchangesCount } = await supabase
     .from('seed_exchanges')
@@ -52,13 +52,13 @@ export default async function ProfilePage() {
   const { count: postsCount } = await supabase
     .from('community_posts')
     .select('*', { count: 'exact', head: true })
-    .eq('user_id', user.id)
+    .eq('author_id', user.id)
 
   // Get recent seeds
   const { data: recentSeeds } = await supabase
     .from('seeds')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('owner_id', user.id)
     .order('created_at', { ascending: false })
     .limit(5)
 

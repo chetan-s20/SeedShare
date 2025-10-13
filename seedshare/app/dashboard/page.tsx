@@ -40,12 +40,12 @@ export default async function DashboardPage() {
   const { count: totalSeeds } = await supabase
     .from('seeds')
     .select('*', { count: 'exact', head: true })
-    .eq('user_id', user.id)
+    .eq('owner_id', user.id)
 
   const { data: seeds } = await supabase
     .from('seeds')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('owner_id', user.id)
     .order('created_at', { ascending: false })
     .limit(5)
 
@@ -107,12 +107,12 @@ export default async function DashboardPage() {
   const { count: totalPosts } = await supabase
     .from('community_posts')
     .select('*', { count: 'exact', head: true })
-    .eq('user_id', user.id)
+    .eq('author_id', user.id)
 
   const { data: recentPosts } = await supabase
     .from('community_posts')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('author_id', user.id)
     .order('created_at', { ascending: false })
     .limit(3)
 
