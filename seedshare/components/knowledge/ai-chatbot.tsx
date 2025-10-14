@@ -5,19 +5,22 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Send, Bot, User, Loader2, Sparkles, RotateCcw } from 'lucide-react'
+import { Send, Bot, User, Loader2, Sparkles, RotateCcw, ImageIcon, X, Camera } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { createChatConversation, saveMessage, getConversation } from '@/lib/supabase/ai-chat'
 import { ChatSidebar } from './chat-sidebar'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import Image from 'next/image'
 
 interface Message {
   id: string
   role: 'user' | 'assistant'
   content: string
   timestamp: Date
+  imageUrl?: string
+  isAnalysis?: boolean
 }
 
 const EXAMPLE_QUESTIONS = [
@@ -44,6 +47,10 @@ const WELCOME_MESSAGES = {
 export function AIChatbot() {
   const [language, setLanguage] = useState<string>('english')
   const [conversationId, setConversationId] = useState<string | null>(null)
+  const [selectedImage, setSelectedImage] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -84,7 +91,145 @@ export function AIChatbot() {
     scrollToBottom()
   }, [messages, isLoading])
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file')
+        return
+      }
+      
+      // Validate file size (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image size should be less than 5MB')
+        return
+      }
+
+      setSelectedImage(file)
+      
+      // Create preview
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const clearImage = () => {
+    setSelectedImage(null)
+    setImagePreview(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
+  const handleAnalyzeImage = async () => {
+    if (!selectedImage) return
+
+    setIsAnalyzing(true)
+    
+    // Add user message with image
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: input || 'Please analyze this seed image for health issues',
+      imageUrl: imagePreview || undefined,
+      timestamp: new Date(),
+    }
+    
+    setMessages(prev => [...prev, userMessage])
+    setInput('')
+
+    try {
+      const formData = new FormData()
+      formData.append('image', selectedImage)
+      formData.append('context', input)
+
+      const response = await fetch('/api/analyze-seed', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        console.error('Analysis API error:', error)
+        const errorMessage = error.details 
+          ? `${error.error}: ${error.details}`
+          : error.error || 'Failed to analyze image'
+        throw new Error(errorMessage)
+      }
+
+      const data = await response.json()
+      const analysis = data.analysis
+      
+      // Create formatted response message
+      const responseContent = `## 🔬 Seed Health Analysis Results
+
+**Condition:** ${analysis.seedCondition.toUpperCase()} ${analysis.severity !== 'none' ? `(${analysis.severity})` : ''}
+**Confidence:** ${(analysis.confidenceScore * 100).toFixed(1)}%
+
+${analysis.diseasesDetected?.length > 0 ? `### 🦠 Diseases Detected
+${analysis.diseasesDetected.map((d: string) => `- ${d}`).join('\n')}
+` : ''}${analysis.symptoms?.length > 0 ? `### 📋 Symptoms Observed
+${analysis.symptoms.map((s: string) => `- ${s}`).join('\n')}
+` : ''}${analysis.possibleCauses?.length > 0 ? `### 🔍 Possible Causes
+${analysis.possibleCauses.map((c: string) => `- ${c}`).join('\n')}
+` : ''}${analysis.medicinesSuggested?.length > 0 ? `### 💊 Recommended Medicines
+
+${analysis.medicinesSuggested.map((med: any) => `**${med.name}** (${med.type})
+- **Dosage:** ${med.dosage}
+- **Application:** ${med.applicationMethod}
+- **Precautions:** ${med.precautions}
+`).join('\n')}` : ''}${analysis.recommendations?.length > 0 ? `### ✅ Recommendations
+${analysis.recommendations.map((r: string) => `- ${r}`).join('\n')}
+` : ''}${analysis.preventiveMeasures?.length > 0 ? `### 🛡️ Preventive Measures
+${analysis.preventiveMeasures.map((p: string) => `- ${p}`).join('\n')}
+` : ''}${analysis.storageAdvice ? `### 📦 Storage Advice
+${analysis.storageAdvice}
+` : ''}${analysis.viabilityAssessment ? `### 🌱 Viability Assessment
+${analysis.viabilityAssessment}
+` : ''}
+---
+
+${analysis.detailedAnalysis}`
+
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: responseContent,
+        imageUrl: data.imageUrl,
+        isAnalysis: true,
+        timestamp: new Date(),
+      }
+
+      setMessages(prev => [...prev, assistantMessage])
+      
+      // Clear image selection
+      clearImage()
+
+    } catch (error: any) {
+      console.error('Image analysis error:', error)
+      setMessages(prev => [...prev, {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: `Sorry, I encountered an error analyzing the seed image: ${error.message}. Please try again or contact support if the issue persists.`,
+        timestamp: new Date(),
+      }])
+    } finally {
+      setIsAnalyzing(false)
+      scrollToBottom()
+    }
+  }
+
   const handleSendMessage = async () => {
+    // If image is selected, analyze it instead
+    if (selectedImage) {
+      await handleAnalyzeImage()
+      return
+    }
+
     if (!input.trim() || isLoading) return
 
     const userMessage: Message = {
@@ -352,6 +497,17 @@ export function AIChatbot() {
                   : 'bg-muted mr-12'
               }`}
             >
+              {message.imageUrl && (
+                <div className="mb-3 rounded-lg overflow-hidden border">
+                  <Image
+                    src={message.imageUrl}
+                    alt="Seed image"
+                    width={300}
+                    height={200}
+                    className="w-full h-auto object-cover"
+                  />
+                </div>
+              )}
               {message.role === 'user' ? (
                 <div className="text-sm whitespace-pre-wrap break-words overflow-wrap-anywhere">
                   {message.content}
@@ -401,7 +557,7 @@ export function AIChatbot() {
         ))}
 
         {/* Loading Indicator */}
-        {isLoading && (
+        {(isLoading || isAnalyzing) && (
           <div className="flex gap-3">
             <Avatar className="h-8 w-8">
               <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-500">
@@ -411,7 +567,9 @@ export function AIChatbot() {
             <div className="flex-1 px-4 py-3 rounded-lg bg-muted mr-12">
               <div className="flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <p className="text-sm text-muted-foreground">Thinking...</p>
+                <p className="text-sm text-muted-foreground">
+                  {isAnalyzing ? 'Analyzing seed image...' : 'Thinking...'}
+                </p>
               </div>
             </div>
           </div>
@@ -421,27 +579,80 @@ export function AIChatbot() {
       </CardContent>
 
       <CardFooter className="border-t p-4">
-        <div className="flex gap-2 w-full">
-          <Textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Ask anything about seeds, farming, or gardening..."
-            className="min-h-[60px] resize-none"
-            disabled={isLoading}
-          />
-          <Button
-            onClick={handleSendMessage}
-            disabled={!input.trim() || isLoading}
-            size="lg"
-            className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600"
-          >
-            {isLoading ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <Send className="h-5 w-5" />
-            )}
-          </Button>
+        <div className="w-full space-y-3">
+          {/* Image Preview */}
+          {imagePreview && (
+            <div className="relative inline-block">
+              <Image
+                src={imagePreview}
+                alt="Selected seed"
+                width={150}
+                height={150}
+                className="rounded-lg border-2 border-indigo-300"
+              />
+              <Button
+                size="icon"
+                variant="destructive"
+                className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                onClick={clearImage}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+              <Badge className="absolute bottom-2 left-2 bg-indigo-600">
+                <Camera className="h-3 w-3 mr-1" />
+                Ready to analyze
+              </Badge>
+            </div>
+          )}
+
+          <div className="flex gap-2 w-full">
+            {/* Hidden file input */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept="image/*"
+              onChange={handleImageSelect}
+              className="hidden"
+            />
+
+            {/* Camera button */}
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isLoading || isAnalyzing}
+              title="Upload seed image for health analysis"
+              className="shrink-0"
+            >
+              <Camera className="h-5 w-5" />
+            </Button>
+
+            <Textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder={selectedImage ? "Add context for the image (optional)..." : "Ask anything about seeds, or upload a seed image for health analysis..."}
+              className="min-h-[60px] resize-none"
+              disabled={isLoading || isAnalyzing}
+            />
+            <Button
+              onClick={handleSendMessage}
+              disabled={(!input.trim() && !selectedImage) || isLoading || isAnalyzing}
+              size="lg"
+              className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 shrink-0"
+            >
+              {isLoading || isAnalyzing ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : selectedImage ? (
+                <span className="flex items-center gap-1">
+                  <Camera className="h-4 w-4" />
+                  Analyze
+                </span>
+              ) : (
+                <Send className="h-5 w-5" />
+              )}
+            </Button>
+          </div>
         </div>
       </CardFooter>
     </Card>
