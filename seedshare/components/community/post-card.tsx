@@ -30,25 +30,43 @@ interface Post {
   title: string
   content: string
   author: {
-    name: string
-    username: string
-    avatar: string
-    role: string
+    id?: string
+    name?: string
+    username?: string
+    avatar?: string
+    avatar_url?: string
+    role?: string
+    full_name?: string
+    email?: string
   }
   community: {
+    id?: string
     name: string
-    slug: string
-    icon: string
-  }
+    slug?: string
+    icon?: string
+    description?: string | null
+  } | null
   upvotes: number
   downvotes: number
   commentCount: number
+  comment_count?: number
   createdAt: string
-  tags: string[]
-  images: string[]
-  isUpvoted: boolean
-  isDownvoted: boolean
-  isSaved: boolean
+  created_at?: string
+  updated_at?: string
+  tags: string[] | null
+  images: string[] | null
+  isUpvoted?: boolean
+  isDownvoted?: boolean
+  isSaved?: boolean
+  user_vote?: {
+    vote_type: 'up' | 'down'
+  } | null
+  is_saved?: boolean
+  post_type?: string
+  link_url?: string | null
+  view_count?: number
+  is_pinned?: boolean
+  is_locked?: boolean
 }
 
 interface PostCardProps {
@@ -176,6 +194,20 @@ export function PostCard({ post }: PostCardProps) {
     navigator.clipboard.writeText(`${window.location.origin}/community/post/${post.id}`)
   }
 
+  // Get display data with fallbacks
+  const displayCreatedAt = post.createdAt || post.created_at || '';
+  const displayCommentCount = post.commentCount || post.comment_count || 0;
+  const displayUserVote = post.user_vote?.vote_type || (post.isUpvoted ? 'up' : post.isDownvoted ? 'down' : null);
+  const isSavedPost = isSaved || post.is_saved || false;
+  const displayTags = post.tags || [];
+  const displayImages = post.images || [];
+  
+  // Username handling - different APIs return different structures
+  const username = post.author?.username || post.author?.email?.split('@')[0] || '';
+  const authorName = post.author?.name || post.author?.full_name || username || '';
+  const authorRole = post.author?.role || 'Member';
+  const avatarUrl = post.author?.avatar || post.author?.avatar_url || '';
+  
   return (
     <Card className="hover:border-gray-300 dark:hover:border-gray-600 transition-colors">
       <div className="flex">
@@ -213,23 +245,27 @@ export function PostCard({ post }: PostCardProps) {
           <CardContent className="p-4">
             {/* Post Header */}
             <div className="flex items-center gap-2 mb-2 text-xs text-gray-600">
-              <Link
-                href={`/community/${post.community.slug}`}
-                className="flex items-center gap-1 font-semibold hover:underline"
-              >
-                <span>{post.community.icon}</span>
-                <span>c/{post.community.slug}</span>
-              </Link>
-              <span>•</span>
+              {post.community && (
+                <>
+                  <Link
+                    href={`/community/${post.community.slug || post.community.name || post.community.id}`}
+                    className="flex items-center gap-1 font-semibold hover:underline"
+                  >
+                    <span>{post.community.icon || '🌱'}</span>
+                    <span>c/{post.community.slug || post.community.name || post.community.id}</span>
+                  </Link>
+                  <span>•</span>
+                </>
+              )}
               <span>Posted by</span>
-              <Link href={`/profile/${post.author.username}`} className="hover:underline">
-                u/{post.author.username}
+              <Link href={`/profile/${username}`} className="hover:underline">
+                u/{username}
               </Link>
               <Badge variant="outline" className="text-xs">
-                {post.author.role}
+                {authorRole}
               </Badge>
               <span>•</span>
-              <span>{post.createdAt}</span>
+              <span>{displayCreatedAt}</span>
             </div>
 
             {/* Post Title */}
@@ -240,9 +276,9 @@ export function PostCard({ post }: PostCardProps) {
             </Link>
 
             {/* Post Tags */}
-            {post.tags.length > 0 && (
+            {displayTags.length > 0 && (
               <div className="flex flex-wrap gap-1 mb-3">
-                {post.tags.map((tag) => (
+                {displayTags.map((tag) => (
                   <Badge key={tag} variant="secondary" className="text-xs">
                     #{tag}
                   </Badge>
@@ -266,18 +302,47 @@ export function PostCard({ post }: PostCardProps) {
             </div>
 
             {/* Post Images */}
-            {post.images.length > 0 && (
+            {displayImages.length > 0 && (
               <div className={`grid gap-2 mb-3 ${
-                post.images.length === 1 ? 'grid-cols-1' : 'grid-cols-2'
+                displayImages.length === 1 ? 'grid-cols-1' : 'grid-cols-2'
               }`}>
-                {post.images.map((image, index) => (
+                {displayImages.map((image, index) => (
                   <div
                     key={index}
                     className="relative h-64 bg-gray-200 dark:bg-gray-800 rounded-lg overflow-hidden"
                   >
-                    <div className="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-600">
+                    {image.startsWith('data:') ? (
+                      // For inline base64 images
+                      <img 
+                        src={image} 
+                        alt={`Post image ${index + 1}`} 
+                        className="absolute inset-0 w-full h-full object-cover" 
+                      />
+                    ) : image.startsWith('http') ? (
+                      // For normal URLs (including Supabase storage URLs)
+                      <Image
+                        src={image}
+                        alt={`Post image ${index + 1}`}
+                        fill
+                        className="object-cover"
+                        onError={(e) => {
+                          // Fallback for failed image loads
+                          e.currentTarget.style.display = 'none';
+                          e.currentTarget.parentElement?.classList.add('image-error');
+                        }}
+                      />
+                    ) : (
+                      // Fallback for missing/invalid image URLs
+                      <div className="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-600">
+                        <ExternalLink className="h-12 w-12" />
+                        <span className="ml-2">Image unavailable</span>
+                      </div>
+                    )}
+                    
+                    {/* Add error fallback display */}
+                    <div className="hidden image-error absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-600">
                       <ExternalLink className="h-12 w-12" />
-                      <span className="ml-2">Image placeholder</span>
+                      <span className="ml-2">Image failed to load</span>
                     </div>
                   </div>
                 ))}
@@ -289,7 +354,7 @@ export function PostCard({ post }: PostCardProps) {
           <CardFooter className="px-4 py-2 border-t dark:border-gray-700 flex items-center gap-2">
             <Button variant="ghost" size="sm" className="gap-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800">
               <MessageSquare className="h-4 w-4" />
-              <span>{post.commentCount} Comments</span>
+              <span>{displayCommentCount} Comments</span>
             </Button>
             <Button
               variant="ghost"
@@ -304,12 +369,12 @@ export function PostCard({ post }: PostCardProps) {
               variant="ghost"
               size="sm"
               className={`gap-2 hover:bg-gray-100 dark:hover:bg-gray-800 ${
-                isSaved ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-600 dark:text-gray-400'
+                isSavedPost ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-600 dark:text-gray-400'
               }`}
               onClick={handleSave}
             >
-              <Bookmark className={`h-4 w-4 ${isSaved ? 'fill-current' : ''}`} />
-              <span>{isSaved ? 'Saved' : 'Save'}</span>
+              <Bookmark className={`h-4 w-4 ${isSavedPost ? 'fill-current' : ''}`} />
+              <span>{isSavedPost ? 'Saved' : 'Save'}</span>
             </Button>
 
             <div className="ml-auto">
