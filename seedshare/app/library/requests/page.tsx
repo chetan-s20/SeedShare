@@ -6,6 +6,7 @@ import { Inbox, Leaf, PackageSearch, Send } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { RequestDetailsModal } from '@/components/library/request-details-modal';
+import CreateGeneralRequestDialog from '@/components/library/create-general-request-dialog';
 
 export default async function MyRequestsPage() {
   const supabase = await createClient();
@@ -31,41 +32,92 @@ export default async function MyRequestsPage() {
     );
   }
 
-  // Fetch user's sent requests
+  // Fetch user's sent requests (requests this user made to others)
   const { data: sentRequests, error: sentError } = await supabase
     .from('seed_requests')
     .select(`
       *,
+      tagged_user:profiles!seed_requests_tagged_user_id_fkey(full_name, email),
       seed:seeds(
         id,
         common_name,
         scientific_name,
         variety,
-        image_url,
-        quantity_available,
-        owner:profiles(full_name, email, city, state)
+        images,
+        quantity,
+        unit,
+        owner_id,
+        owner:profiles!seeds_owner_id_fkey(full_name, email, city, state)
       )
     `)
     .eq('requester_id', user.id)
     .order('created_at', { ascending: false });
 
-  // Fetch requests received (for seeds user owns)
-  const { data: receivedRequests, error: receivedError } = await supabase
+  if (sentError) {
+    console.error('Error fetching sent requests:', sentError);
+  }
+
+  // Fetch requests received - for seeds this user owns
+  const { data: ownedSeedRequests, error: ownedError } = await supabase
     .from('seed_requests')
     .select(`
       *,
-      requester:profiles(full_name, email, city, state),
+      requester:profiles!seed_requests_requester_id_fkey(full_name, email, city, state),
+      tagged_user:profiles!seed_requests_tagged_user_id_fkey(full_name, email),
       seed:seeds!inner(
         id,
         common_name,
         scientific_name,
         variety,
-        image_url,
-        quantity_available
+        images,
+        quantity,
+        unit,
+        owner_id
       )
     `)
-    .eq('seed.owner_id', user.id)
+    .eq('seeds.owner_id', user.id)
     .order('created_at', { ascending: false });
+
+  // Fetch requests where user is tagged
+  const { data: taggedRequests, error: taggedError } = await supabase
+    .from('seed_requests')
+    .select(`
+      *,
+      requester:profiles!seed_requests_requester_id_fkey(full_name, email, city, state),
+      tagged_user:profiles!seed_requests_tagged_user_id_fkey(full_name, email),
+      seed:seeds(
+        id,
+        common_name,
+        scientific_name,
+        variety,
+        images,
+        quantity,
+        unit,
+        owner_id
+      )
+    `)
+    .eq('tagged_user_id', user.id)
+    .order('created_at', { ascending: false });
+
+  if (ownedError) {
+    console.error('Error fetching owned seed requests:', ownedError);
+  }
+  
+  if (taggedError) {
+    console.error('Error fetching tagged requests:', taggedError);
+  }
+
+  // Combine both arrays and remove duplicates based on id
+  const receivedRequestsMap = new Map();
+  [...(ownedSeedRequests || []), ...(taggedRequests || [])].forEach((req: any) => {
+    if (!receivedRequestsMap.has(req.id)) {
+      receivedRequestsMap.set(req.id, req);
+    }
+  });
+  const receivedRequests = Array.from(receivedRequestsMap.values())
+    .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+  const receivedError = ownedError || taggedError;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -122,16 +174,16 @@ export default async function MyRequestsPage() {
                         {/* Seed Image */}
                         <div className="flex-shrink-0">
                           <div className="w-20 h-20 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden relative">
-                            {request.seed?.image_url ? (
-                              request.seed.image_url.startsWith('data:') ? (
+                            {request.seed?.images?.[0] ? (
+                              request.seed.images[0].startsWith('data:') ? (
                                 <img 
-                                  src={request.seed.image_url} 
+                                  src={request.seed.images[0]} 
                                   alt={request.seed.common_name}
                                   className="w-full h-full object-cover"
                                 />
                               ) : (
                                 <Image
-                                  src={request.seed.image_url}
+                                  src={request.seed.images[0]}
                                   alt={request.seed.common_name}
                                   fill
                                   className="object-cover"
@@ -150,11 +202,19 @@ export default async function MyRequestsPage() {
                           <div className="flex items-start justify-between gap-2 mb-2">
                             <div>
                               <h3 className="font-semibold text-lg line-clamp-1">
-                                {request.seed?.common_name || 'Unknown Seed'}
+                                {request.seed?.common_name ? 
+                                  request.seed.common_name : 
+                                  'General Seed Request'
+                                }
                               </h3>
                               {request.seed?.variety && (
                                 <p className="text-sm text-gray-600 dark:text-gray-400">
                                   {request.seed.variety}
+                                </p>
+                              )}
+                              {!request.seed && (
+                                <p className="text-sm text-blue-600 dark:text-blue-400">
+                                  Community Request
                                 </p>
                               )}
                             </div>
@@ -164,13 +224,25 @@ export default async function MyRequestsPage() {
                           </div>
 
                           <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                            <p>
-                              <span className="font-medium">Quantity:</span> {request.quantity_requested} units
-                            </p>
-                            <p>
-                              <span className="font-medium">Owner:</span>{' '}
-                              {request.seed?.owner?.full_name || request.seed?.owner?.email || 'Unknown'}
-                            </p>
+                            {request.quantity_requested > 0 && (
+                              <p>
+                                <span className="font-medium">Quantity:</span> {request.quantity_requested} {request.seed?.unit || 'units'}
+                              </p>
+                            )}
+                            {request.seed?.owner && (
+                              <p>
+                                <span className="font-medium">Owner:</span>{' '}
+                                {request.seed.owner.full_name || request.seed.owner.email || 'Unknown'}
+                              </p>
+                            )}
+                            {request.tagged_user && (
+                              <p className="flex items-center gap-1">
+                                <span className="font-medium">Tagged:</span>
+                                <Badge variant="outline" className="text-xs">
+                                  @{request.tagged_user.full_name || request.tagged_user.email}
+                                </Badge>
+                              </p>
+                            )}
                             <p>
                               <span className="font-medium">Requested:</span>{' '}
                               {new Date(request.created_at).toLocaleDateString()}
@@ -191,11 +263,13 @@ export default async function MyRequestsPage() {
 
                           <div className="flex gap-2 mt-3">
                             <RequestDetailsModal request={request} type="sent" />
-                            <Button variant="outline" size="sm" asChild>
-                              <Link href={`/library/${request.seed?.id}`}>
-                                View Seed
-                              </Link>
-                            </Button>
+                            {request.seed?.id && (
+                              <Button variant="outline" size="sm" asChild>
+                                <Link href={`/library/${request.seed.id}`}>
+                                  View Seed
+                                </Link>
+                              </Button>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -206,15 +280,11 @@ export default async function MyRequestsPage() {
                 <Card>
                   <CardContent className="p-8 text-center">
                     <PackageSearch className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No Requests Yet</h3>
+                    <h3 className="text-lg font-semibold mb-2">No Requests Made</h3>
                     <p className="text-gray-600 dark:text-gray-400 mb-4">
-                      You haven't made any seed requests yet. Browse the seed library to find seeds you're interested in.
+                      You haven't made any seed requests yet. Create a request and tag a community member who might help.
                     </p>
-                    <Button asChild>
-                      <Link href="/library">
-                        Browse Seeds
-                      </Link>
-                    </Button>
+                    <CreateGeneralRequestDialog />
                   </CardContent>
                 </Card>
               )}
@@ -240,16 +310,16 @@ export default async function MyRequestsPage() {
                         {/* Seed Image */}
                         <div className="flex-shrink-0">
                           <div className="w-20 h-20 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden relative">
-                            {request.seed?.image_url ? (
-                              request.seed.image_url.startsWith('data:') ? (
+                            {request.seed?.images?.[0] ? (
+                              request.seed.images[0].startsWith('data:') ? (
                                 <img 
-                                  src={request.seed.image_url} 
+                                  src={request.seed.images[0]} 
                                   alt={request.seed.common_name}
                                   className="w-full h-full object-cover"
                                 />
                               ) : (
                                 <Image
-                                  src={request.seed.image_url}
+                                  src={request.seed.images[0]}
                                   alt={request.seed.common_name}
                                   fill
                                   className="object-cover"
@@ -283,7 +353,7 @@ export default async function MyRequestsPage() {
 
                           <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
                             <p>
-                              <span className="font-medium">Quantity:</span> {request.quantity_requested} units
+                              <span className="font-medium">Quantity:</span> {request.quantity_requested} {request.seed?.unit || 'units'}
                             </p>
                             <p>
                               <span className="font-medium">From:</span>{' '}
@@ -293,6 +363,14 @@ export default async function MyRequestsPage() {
                               <p>
                                 <span className="font-medium">Location:</span>{' '}
                                 {request.requester.city}, {request.requester.state}
+                              </p>
+                            )}
+                            {request.tagged_user && (
+                              <p className="flex items-center gap-1">
+                                <span className="font-medium">You were tagged:</span>
+                                <Badge variant="secondary" className="text-xs bg-blue-100 dark:bg-blue-900/30">
+                                  @{request.tagged_user.full_name || request.tagged_user.email}
+                                </Badge>
                               </p>
                             )}
                             <p>
@@ -330,9 +408,9 @@ export default async function MyRequestsPage() {
                 <Card>
                   <CardContent className="p-8 text-center">
                     <Inbox className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No Requests Received</h3>
+                    <h3 className="text-lg font-semibold mb-2">No Requests Available</h3>
                     <p className="text-gray-600 dark:text-gray-400 mb-4">
-                      You haven't received any seed requests yet. Add your seeds to the library to start receiving requests.
+                      You haven't received any seed requests yet. Add your seeds to the library or wait for community members to tag you in their requests.
                     </p>
                     <Button asChild>
                       <Link href="/library/add">

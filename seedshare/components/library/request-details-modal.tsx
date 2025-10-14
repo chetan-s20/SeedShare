@@ -229,16 +229,16 @@ export function RequestDetailsModal({ request, type }: RequestDetailsModalProps)
             <div className="flex gap-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
               <div className="flex-shrink-0">
                 <div className="w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden relative">
-                  {request.seed?.image_url ? (
-                    request.seed.image_url.startsWith('data:') ? (
+                  {request.seed?.images?.[0] ? (
+                    request.seed.images[0].startsWith('data:') ? (
                       <img 
-                        src={request.seed.image_url} 
+                        src={request.seed.images[0]} 
                         alt={request.seed.common_name}
                         className="w-full h-full object-cover"
                       />
                     ) : (
                       <Image
-                        src={request.seed.image_url}
+                        src={request.seed.images[0]}
                         alt={request.seed.common_name}
                         fill
                         className="object-cover"
@@ -264,7 +264,7 @@ export function RequestDetailsModal({ request, type }: RequestDetailsModalProps)
                   </p>
                 )}
                 <p className="text-sm">
-                  <span className="font-medium">Available:</span> {request.seed?.quantity_available || 'N/A'} units
+                  <span className="font-medium">Available:</span> {request.seed?.quantity || 'N/A'} {request.seed?.unit || 'units'}
                 </p>
               </div>
             </div>

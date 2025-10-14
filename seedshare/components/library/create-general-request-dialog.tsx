@@ -13,7 +13,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { Loader2, Send, UserPlus } from 'lucide-react';
+import { Loader2, Send, UserPlus, Plus } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import {
@@ -23,12 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-
-interface RequestSeedButtonProps {
-  seedId: string;
-  seedName: string;
-  ownerId?: string;
-}
+import { toast } from 'sonner';
 
 interface Profile {
   id: string;
@@ -36,12 +31,13 @@ interface Profile {
   email: string;
 }
 
-export default function RequestSeedButton({ seedId, seedName, ownerId }: RequestSeedButtonProps) {
+export default function CreateGeneralRequestDialog() {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [users, setUsers] = useState<Profile[]>([]);
   const [taggedUserId, setTaggedUserId] = useState<string>('');
+  const [seedDescription, setSeedDescription] = useState('');
   const router = useRouter();
 
   // Fetch available users to tag when dialog opens
@@ -52,7 +48,7 @@ export default function RequestSeedButton({ seedId, seedName, ownerId }: Request
         const { data: { user } } = await supabase.auth.getUser();
         
         if (user) {
-          // Fetch all users except current user - order by full_name nulls last
+          // Fetch all users except current user
           const { data, error } = await supabase
             .from('profiles')
             .select('id, full_name, email')
@@ -60,27 +56,19 @@ export default function RequestSeedButton({ seedId, seedName, ownerId }: Request
             .order('full_name', { ascending: true, nullsFirst: false });
 
           if (error) {
-            console.error('Error fetching users for tagging:', error);
+            console.error('Error fetching users:', error);
           }
 
           if (data) {
-            console.log('Available users to tag:', data.length);
+            console.log('Available users:', data.length);
             setUsers(data);
-            // Auto-select seed owner if available
-            if (ownerId) {
-              console.log('Auto-selecting owner:', ownerId);
-              const ownerExists = data.some((u: Profile) => u.id === ownerId);
-              if (ownerExists) {
-                setTaggedUserId(ownerId);
-              }
-            }
           }
         }
       };
 
       fetchUsers();
     }
-  }, [open, ownerId]);
+  }, [open]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -94,47 +82,54 @@ export default function RequestSeedButton({ seedId, seedName, ownerId }: Request
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        setError('You must be logged in to request seeds');
+        setError('You must be logged in to create a request');
         setLoading(false);
         return;
       }
 
-      // Create seed request with optional tagged user
+      // Validate that a user is tagged (required for general requests)
+      if (!taggedUserId) {
+        setError('Please tag a user to direct your request');
+        setLoading(false);
+        return;
+      }
+
+      // Create a general seed request with null seed_id
       const requestData: any = {
-        seed_id: seedId,
+        seed_id: null, // General request not tied to specific seed
         requester_id: user.id,
-        quantity_requested: parseFloat(formData.get('quantity') as string),
+        quantity_requested: parseFloat(formData.get('quantity') as string) || 0,
         message: formData.get('message') as string || null,
         status: 'pending',
+        tagged_user_id: taggedUserId, // Required for general requests
       };
-
-      // Add tagged user if selected (and not the placeholder value)
-      if (taggedUserId && taggedUserId !== 'none-selected' && taggedUserId !== 'loading') {
-        requestData.tagged_user_id = taggedUserId;
-      }
 
       const { error: insertError } = await supabase
         .from('seed_requests')
-        .insert(requestData as any);
+        .insert(requestData);
 
       if (insertError) throw insertError;
 
-      // Award points for requesting seed
+      // Award points for making a request
       await supabase.from('gamification').insert({
         user_id: user.id,
         action_type: 'seed_requested',
         points_earned: 5,
-        description: `Requested seed: ${seedName}`,
+        description: `Created general seed request`,
       } as any);
 
       setOpen(false);
       router.refresh();
       
-      // Show success message (you can implement toast notification here)
-      alert('Seed request sent successfully!');
+      toast.success('Request sent successfully!');
+      
+      // Reset form
+      setSeedDescription('');
+      setTaggedUserId('');
     } catch (err: any) {
-      console.error('Error requesting seed:', err);
-      setError(err.message || 'Failed to send request');
+      console.error('Error creating request:', err);
+      setError(err.message || 'Failed to create request');
+      toast.error('Failed to create request');
     } finally {
       setLoading(false);
     }
@@ -143,55 +138,60 @@ export default function RequestSeedButton({ seedId, seedName, ownerId }: Request
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" className="flex-1">
-          <Send className="mr-2 h-4 w-4" />
-          Request Seeds
+        <Button className="w-full max-w-xs">
+          <Plus className="mr-2 h-4 w-4" />
+          Create New Request
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Request Seeds</DialogTitle>
+          <DialogTitle>Create Seed Request</DialogTitle>
           <DialogDescription>
-            Send a request to the seed owner. They will be notified and can accept or decline.
+            Tag a specific user to request seeds from them or ask for help finding seeds.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="seedName">Seed</Label>
+            <Label htmlFor="seedDescription">What seeds are you looking for?</Label>
             <Input
-              id="seedName"
-              value={seedName}
-              disabled
-              className="bg-gray-50"
+              id="seedDescription"
+              name="seedDescription"
+              value={seedDescription}
+              onChange={(e) => setSeedDescription(e.target.value)}
+              placeholder="e.g., Tomato seeds, Basil, Organic vegetables..."
+              required
             />
+            <p className="text-xs text-gray-500 mt-1">
+              Describe what you're looking for
+            </p>
           </div>
 
           <div>
-            <Label htmlFor="quantity">Quantity Requested</Label>
+            <Label htmlFor="quantity">Quantity Needed</Label>
             <Input
               id="quantity"
               name="quantity"
               type="number"
               min="1"
               step="0.01"
-              placeholder="Enter quantity"
-              required
+              placeholder="Enter quantity (optional)"
+              defaultValue=""
             />
+            <p className="text-xs text-gray-500 mt-1">
+              How much do you need? (optional)
+            </p>
           </div>
 
           <div>
             <Label htmlFor="tagUser" className="flex items-center gap-2">
               <UserPlus className="h-4 w-4" />
-              Tag a Specific User by Profile Name (Optional)
+              Tag a User (Required) *
             </Label>
-            <Select value={taggedUserId || undefined} onValueChange={setTaggedUserId}>
+            <Select value={taggedUserId || undefined} onValueChange={setTaggedUserId} required>
               <SelectTrigger id="tagUser" className="w-full">
                 <SelectValue placeholder="Select a user to tag..." />
               </SelectTrigger>
               <SelectContent className="max-h-60">
-                <SelectItem value="none-selected">
-                  <span className="text-gray-500">No one (General request)</span>
-                </SelectItem>
                 {users.length === 0 ? (
                   <SelectItem value="loading" disabled>
                     <span className="text-gray-400">Loading users...</span>
@@ -199,20 +199,13 @@ export default function RequestSeedButton({ seedId, seedName, ownerId }: Request
                 ) : (
                   users.map((user) => (
                     <SelectItem key={user.id} value={user.id}>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-col">
                         <span className="font-medium">
                           {user.full_name || 'No Name'}
                         </span>
-                        {user.full_name && (
-                          <span className="text-xs text-gray-500">
-                            ({user.email})
-                          </span>
-                        )}
-                        {!user.full_name && (
-                          <span className="text-xs text-gray-500">
-                            {user.email}
-                          </span>
-                        )}
+                        <span className="text-xs text-gray-500">
+                          {user.email}
+                        </span>
                       </div>
                     </SelectItem>
                   ))
@@ -221,7 +214,7 @@ export default function RequestSeedButton({ seedId, seedName, ownerId }: Request
             </Select>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               {users.length > 0 ? (
-                <>Found {users.length} user(s). Tag someone to direct this request to them specifically.</>
+                <>Found {users.length} user(s). Tag someone who might help.</>
               ) : (
                 <>Loading users...</>
               )}
@@ -229,30 +222,37 @@ export default function RequestSeedButton({ seedId, seedName, ownerId }: Request
           </div>
 
           <div>
-            <Label htmlFor="message">Message (Optional)</Label>
+            <Label htmlFor="message">Message *</Label>
             <Textarea
               id="message"
               name="message"
-              placeholder="Tell the owner why you need these seeds, or any special requests..."
+              placeholder="Explain what you need and why you're reaching out to this user..."
               rows={4}
+              required
             />
+            <p className="text-xs text-gray-500 mt-1">
+              Include: "{seedDescription}" in your message
+            </p>
           </div>
 
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-700 text-sm">{error}</p>
+            <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+              <p className="text-red-700 dark:text-red-400 text-sm">{error}</p>
             </div>
           )}
 
           <div className="flex gap-2">
-            <Button type="submit" disabled={loading} className="flex-1">
+            <Button type="submit" disabled={loading || !taggedUserId} className="flex-1">
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Sending...
                 </>
               ) : (
-                'Send Request'
+                <>
+                  <Send className="mr-2 h-4 w-4" />
+                  Send Request
+                </>
               )}
             </Button>
             <Button

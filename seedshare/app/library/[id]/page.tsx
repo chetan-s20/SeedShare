@@ -242,7 +242,11 @@ export default async function SeedDetailPage({ params }: { params: Promise<{ id:
                 <div className="mt-4 flex gap-2">
                   {!isOwner ? (
                     <>
-                      <RequestSeedButton seedId={id} seedName={seedData.common_name} />
+                      <RequestSeedButton 
+                        seedId={id} 
+                        seedName={seedData.common_name}
+                        ownerId={seedData.owner_id}
+                      />
                       <Button variant="outline" size="sm" className="flex-1" asChild>
                         <Link href={`/messages/${owner?.id}`}>
                           <MessageSquare className="mr-2 h-4 w-4" />
