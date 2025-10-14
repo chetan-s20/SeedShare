@@ -23,6 +23,7 @@ import {
   Globe,
   Heart,
   Package,
+  Microscope,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 
@@ -79,6 +80,13 @@ export default async function HomePage() {
       description: 'Ask questions, share knowledge, and get answers from experts and community members.',
       href: '/knowledge',
       color: 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400',
+    },
+    {
+      icon: Microscope,
+      title: 'Seed Quality Test',
+      description: 'AI-powered disease detection for seeds. Upload images to check quality and get buyer protection.',
+      href: '/quality-test',
+      color: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',
     },
     {
       icon: Video,
