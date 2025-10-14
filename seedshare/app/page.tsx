@@ -194,56 +194,64 @@ export default async function HomePage() {
             <div className="relative hidden lg:block">
               <div className="grid grid-cols-2 gap-4 h-[480px]">
                 {/* Seed Library Feature */}
-                <Card className="border border-gray-200 dark:border-gray-800 hover:shadow-lg transition-all bg-white/70 dark:bg-gray-900/70 backdrop-blur-sm">
-                  <CardHeader className="h-full flex flex-col justify-center">
-                    <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/50 dark:to-emerald-900/50 flex items-center justify-center border border-green-200 dark:border-green-800 mb-3">
-                      <Sprout className="h-6 w-6 text-green-600 dark:text-green-500" />
-                    </div>
-                    <CardTitle className="text-base text-gray-900 dark:text-white mb-2">Seed Library</CardTitle>
-                    <CardDescription className="text-sm leading-relaxed">
-                      Browse {totalSeeds || 0} seeds from farmers worldwide. Share, exchange, and preserve heritage varieties.
-                    </CardDescription>
-                  </CardHeader>
-                </Card>
+                <Link href="/library" className="block h-full">
+                  <Card className="border border-gray-200 dark:border-gray-800 hover:shadow-lg transition-all bg-white/70 dark:bg-gray-900/70 backdrop-blur-sm h-full cursor-pointer hover:border-green-300 dark:hover:border-green-700">
+                    <CardHeader className="h-full flex flex-col justify-center">
+                      <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/50 dark:to-emerald-900/50 flex items-center justify-center border border-green-200 dark:border-green-800 mb-3">
+                        <Sprout className="h-6 w-6 text-green-600 dark:text-green-500" />
+                      </div>
+                      <CardTitle className="text-base text-gray-900 dark:text-white mb-2">Seed Library</CardTitle>
+                      <CardDescription className="text-sm leading-relaxed">
+                        Browse {totalSeeds || 0} seeds from farmers worldwide. Share, exchange, and preserve heritage varieties.
+                      </CardDescription>
+                    </CardHeader>
+                  </Card>
+                </Link>
 
                 {/* AI Assistant Feature */}
-                <Card className="border border-gray-200 dark:border-gray-800 hover:shadow-lg transition-all bg-white/70 dark:bg-gray-900/70 backdrop-blur-sm">
-                  <CardHeader className="h-full flex flex-col justify-center">
-                    <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-indigo-50 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50 flex items-center justify-center border border-indigo-200 dark:border-indigo-800 mb-3">
-                      <Sparkles className="h-6 w-6 text-indigo-600 dark:text-indigo-500" />
-                    </div>
-                    <CardTitle className="text-base text-gray-900 dark:text-white mb-2">AI Assistant</CardTitle>
-                    <CardDescription className="text-sm leading-relaxed">
-                      Get instant farming advice 24/7. Ask about crops, pests, soil, and more.
-                    </CardDescription>
-                  </CardHeader>
-                </Card>
+                <Link href="/knowledge" className="block h-full">
+                  <Card className="border border-gray-200 dark:border-gray-800 hover:shadow-lg transition-all bg-white/70 dark:bg-gray-900/70 backdrop-blur-sm h-full cursor-pointer hover:border-indigo-300 dark:hover:border-indigo-700">
+                    <CardHeader className="h-full flex flex-col justify-center">
+                      <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-indigo-50 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50 flex items-center justify-center border border-indigo-200 dark:border-indigo-800 mb-3">
+                        <Sparkles className="h-6 w-6 text-indigo-600 dark:text-indigo-500" />
+                      </div>
+                      <CardTitle className="text-base text-gray-900 dark:text-white mb-2">AI Assistant</CardTitle>
+                      <CardDescription className="text-sm leading-relaxed">
+                        Get instant farming advice 24/7. Ask about crops, pests, soil, and more.
+                      </CardDescription>
+                    </CardHeader>
+                  </Card>
+                </Link>
 
                 {/* Communities Feature */}
-                <Card className="border border-gray-200 dark:border-gray-800 hover:shadow-lg transition-all bg-white/70 dark:bg-gray-900/70 backdrop-blur-sm">
-                  <CardHeader className="h-full flex flex-col justify-center">
-                    <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-purple-50 to-pink-100 dark:from-purple-900/50 dark:to-pink-900/50 flex items-center justify-center border border-purple-200 dark:border-purple-800 mb-3">
-                      <Users className="h-6 w-6 text-purple-600 dark:text-purple-500" />
-                    </div>
-                    <CardTitle className="text-base text-gray-900 dark:text-white mb-2">Communities</CardTitle>
-                    <CardDescription className="text-sm leading-relaxed">
-                      Join {totalCommunities || 0} local farming groups. Share knowledge and connect with neighbors.
-                    </CardDescription>
-                  </CardHeader>
-                </Card>
+                <Link href="/community" className="block h-full">
+                  <Card className="border border-gray-200 dark:border-gray-800 hover:shadow-lg transition-all bg-white/70 dark:bg-gray-900/70 backdrop-blur-sm h-full cursor-pointer hover:border-purple-300 dark:hover:border-purple-700">
+                    <CardHeader className="h-full flex flex-col justify-center">
+                      <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-purple-50 to-pink-100 dark:from-purple-900/50 dark:to-pink-900/50 flex items-center justify-center border border-purple-200 dark:border-purple-800 mb-3">
+                        <Users className="h-6 w-6 text-purple-600 dark:text-purple-500" />
+                      </div>
+                      <CardTitle className="text-base text-gray-900 dark:text-white mb-2">Communities</CardTitle>
+                      <CardDescription className="text-sm leading-relaxed">
+                        Join {totalCommunities || 0} local farming groups. Share knowledge and connect with neighbors.
+                      </CardDescription>
+                    </CardHeader>
+                  </Card>
+                </Link>
 
                 {/* Marketplace Feature */}
-                <Card className="border border-gray-200 dark:border-gray-800 hover:shadow-lg transition-all bg-white/70 dark:bg-gray-900/70 backdrop-blur-sm">
-                  <CardHeader className="h-full flex flex-col justify-center">
-                    <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-blue-50 to-cyan-100 dark:from-blue-900/50 dark:to-cyan-900/50 flex items-center justify-center border border-blue-200 dark:border-blue-800 mb-3">
-                      <ShoppingBag className="h-6 w-6 text-blue-600 dark:text-blue-500" />
-                    </div>
-                    <CardTitle className="text-base text-gray-900 dark:text-white mb-2">Marketplace</CardTitle>
-                    <CardDescription className="text-sm leading-relaxed">
-                      Buy certified seeds from verified suppliers. Bulk orders and subscriptions available.
-                    </CardDescription>
-                  </CardHeader>
-                </Card>
+                <Link href="/marketplace" className="block h-full">
+                  <Card className="border border-gray-200 dark:border-gray-800 hover:shadow-lg transition-all bg-white/70 dark:bg-gray-900/70 backdrop-blur-sm h-full cursor-pointer hover:border-blue-300 dark:hover:border-blue-700">
+                    <CardHeader className="h-full flex flex-col justify-center">
+                      <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-blue-50 to-cyan-100 dark:from-blue-900/50 dark:to-cyan-900/50 flex items-center justify-center border border-blue-200 dark:border-blue-800 mb-3">
+                        <ShoppingBag className="h-6 w-6 text-blue-600 dark:text-blue-500" />
+                      </div>
+                      <CardTitle className="text-base text-gray-900 dark:text-white mb-2">Marketplace</CardTitle>
+                      <CardDescription className="text-sm leading-relaxed">
+                        Buy certified seeds from verified suppliers. Bulk orders and subscriptions available.
+                      </CardDescription>
+                    </CardHeader>
+                  </Card>
+                </Link>
               </div>
             </div>
           </div>
@@ -525,100 +533,108 @@ export default async function HomePage() {
 
           <div className="grid gap-8 lg:grid-cols-2 max-w-6xl mx-auto">
             {/* AI-Powered Assistant */}
-            <Card className="border border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm hover:shadow-xl transition-all">
-              <CardHeader>
-                <div className="flex items-start gap-4">
-                  <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-indigo-50 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 flex items-center justify-center border border-indigo-200 dark:border-indigo-800 flex-shrink-0">
-                    <Sparkles className="h-6 w-6 text-indigo-600 dark:text-indigo-500" />
+            <Link href="/knowledge">
+              <Card className="border border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm hover:shadow-xl transition-all cursor-pointer h-full hover:border-indigo-300 dark:hover:border-indigo-700">
+                <CardHeader>
+                  <div className="flex items-start gap-4">
+                    <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-indigo-50 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 flex items-center justify-center border border-indigo-200 dark:border-indigo-800 flex-shrink-0">
+                      <Sparkles className="h-6 w-6 text-indigo-600 dark:text-indigo-500" />
+                    </div>
+                    <div className="flex-1">
+                      <CardTitle className="text-xl mb-2">AI-Powered Advice</CardTitle>
+                      <CardDescription className="text-sm leading-relaxed">
+                        Get instant answers to farming questions with our advanced AI assistant. Ask about crop diseases, soil health, pest control, irrigation, and more - available 24/7 in multiple languages.
+                      </CardDescription>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <CardTitle className="text-xl mb-2">AI-Powered Advice</CardTitle>
-                    <CardDescription className="text-sm leading-relaxed">
-                      Get instant answers to farming questions with our advanced AI assistant. Ask about crop diseases, soil health, pest control, irrigation, and more - available 24/7 in multiple languages.
-                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="outline" className="text-xs">24/7 Available</Badge>
+                    <Badge variant="outline" className="text-xs">Multi-language</Badge>
+                    <Badge variant="outline" className="text-xs">Expert Knowledge</Badge>
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  <Badge variant="outline" className="text-xs">24/7 Available</Badge>
-                  <Badge variant="outline" className="text-xs">Multi-language</Badge>
-                  <Badge variant="outline" className="text-xs">Expert Knowledge</Badge>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </Link>
 
             {/* Seed Exchange Network */}
-            <Card className="border border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm hover:shadow-xl transition-all">
-              <CardHeader>
-                <div className="flex items-start gap-4">
-                  <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 flex items-center justify-center border border-green-200 dark:border-green-800 flex-shrink-0">
-                    <Sprout className="h-6 w-6 text-green-600 dark:text-green-500" />
+            <Link href="/library">
+              <Card className="border border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm hover:shadow-xl transition-all cursor-pointer h-full hover:border-green-300 dark:hover:border-green-700">
+                <CardHeader>
+                  <div className="flex items-start gap-4">
+                    <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 flex items-center justify-center border border-green-200 dark:border-green-800 flex-shrink-0">
+                      <Sprout className="h-6 w-6 text-green-600 dark:text-green-500" />
+                    </div>
+                    <div className="flex-1">
+                      <CardTitle className="text-xl mb-2">Seed Exchange Network</CardTitle>
+                      <CardDescription className="text-sm leading-relaxed">
+                        Share and discover rare, heirloom, and organic seeds. Track seed provenance with QR codes, exchange with verified farmers, and preserve agricultural biodiversity.
+                      </CardDescription>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <CardTitle className="text-xl mb-2">Seed Exchange Network</CardTitle>
-                    <CardDescription className="text-sm leading-relaxed">
-                      Share and discover rare, heirloom, and organic seeds. Track seed provenance with QR codes, exchange with verified farmers, and preserve agricultural biodiversity.
-                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="outline" className="text-xs">QR Tracking</Badge>
+                    <Badge variant="outline" className="text-xs">Verified Farmers</Badge>
+                    <Badge variant="outline" className="text-xs">Heritage Seeds</Badge>
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  <Badge variant="outline" className="text-xs">QR Tracking</Badge>
-                  <Badge variant="outline" className="text-xs">Verified Farmers</Badge>
-                  <Badge variant="outline" className="text-xs">Heritage Seeds</Badge>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </Link>
 
             {/* Certified Marketplace */}
-            <Card className="border border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm hover:shadow-xl transition-all">
-              <CardHeader>
-                <div className="flex items-start gap-4">
-                  <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-100 dark:from-blue-900/30 dark:to-cyan-900/30 flex items-center justify-center border border-blue-200 dark:border-blue-800 flex-shrink-0">
-                    <ShoppingBag className="h-6 w-6 text-blue-600 dark:text-blue-500" />
+            <Link href="/marketplace">
+              <Card className="border border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm hover:shadow-xl transition-all cursor-pointer h-full hover:border-blue-300 dark:hover:border-blue-700">
+                <CardHeader>
+                  <div className="flex items-start gap-4">
+                    <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-100 dark:from-blue-900/30 dark:to-cyan-900/30 flex items-center justify-center border border-blue-200 dark:border-blue-800 flex-shrink-0">
+                      <ShoppingBag className="h-6 w-6 text-blue-600 dark:text-blue-500" />
+                    </div>
+                    <div className="flex-1">
+                      <CardTitle className="text-xl mb-2">Certified Marketplace</CardTitle>
+                      <CardDescription className="text-sm leading-relaxed">
+                        Purchase certified seeds from verified suppliers. Bulk ordering, subscriptions, volume discounts, and guaranteed quality compliance with Seeds Act regulations.
+                      </CardDescription>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <CardTitle className="text-xl mb-2">Certified Marketplace</CardTitle>
-                    <CardDescription className="text-sm leading-relaxed">
-                      Purchase certified seeds from verified suppliers. Bulk ordering, subscriptions, volume discounts, and guaranteed quality compliance with Seeds Act regulations.
-                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="outline" className="text-xs">Certified Quality</Badge>
+                    <Badge variant="outline" className="text-xs">Bulk Orders</Badge>
+                    <Badge variant="outline" className="text-xs">Secure Payment</Badge>
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  <Badge variant="outline" className="text-xs">Certified Quality</Badge>
-                  <Badge variant="outline" className="text-xs">Bulk Orders</Badge>
-                  <Badge variant="outline" className="text-xs">Secure Payment</Badge>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </Link>
 
             {/* Local Communities */}
-            <Card className="border border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm hover:shadow-xl transition-all">
-              <CardHeader>
-                <div className="flex items-start gap-4">
-                  <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-50 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 flex items-center justify-center border border-purple-200 dark:border-purple-800 flex-shrink-0">
-                    <Users className="h-6 w-6 text-purple-600 dark:text-purple-500" />
+            <Link href="/community">
+              <Card className="border border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm hover:shadow-xl transition-all cursor-pointer h-full hover:border-purple-300 dark:hover:border-purple-700">
+                <CardHeader>
+                  <div className="flex items-start gap-4">
+                    <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-50 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 flex items-center justify-center border border-purple-200 dark:border-purple-800 flex-shrink-0">
+                      <Users className="h-6 w-6 text-purple-600 dark:text-purple-500" />
+                    </div>
+                    <div className="flex-1">
+                      <CardTitle className="text-xl mb-2">Local Communities</CardTitle>
+                      <CardDescription className="text-sm leading-relaxed">
+                        Join region-specific farming communities. Share experiences, learn from neighbors, organize local events, and build strong agricultural networks in your area.
+                      </CardDescription>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <CardTitle className="text-xl mb-2">Local Communities</CardTitle>
-                    <CardDescription className="text-sm leading-relaxed">
-                      Join region-specific farming communities. Share experiences, learn from neighbors, organize local events, and build strong agricultural networks in your area.
-                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="outline" className="text-xs">Local Groups</Badge>
+                    <Badge variant="outline" className="text-xs">Event Planning</Badge>
+                    <Badge variant="outline" className="text-xs">Knowledge Sharing</Badge>
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  <Badge variant="outline" className="text-xs">Local Groups</Badge>
-                  <Badge variant="outline" className="text-xs">Event Planning</Badge>
-                  <Badge variant="outline" className="text-xs">Knowledge Sharing</Badge>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </Link>
           </div>
         </div>
       </section>
