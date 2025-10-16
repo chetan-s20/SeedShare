@@ -18,7 +18,7 @@ interface DiseaseAnalysis {
   treatment: string[]
   prevention: string[]
   safeToPlant: boolean
-  buyerWarning: {
+  buyerWarning?: {
     show: boolean
     message: string
     severity: 'INFO' | 'WARNING' | 'DANGER'
@@ -239,7 +239,7 @@ export function SeedImageAnalyzer({
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Buyer Warning */}
-            {analysis.buyerWarning.show && (
+            {analysis.buyerWarning?.show && (
               <div className={`border-2 rounded-lg p-4 ${getWarningColor(analysis.buyerWarning.severity)}`}>
                 <div className="flex items-start gap-3">
                   <AlertTriangle className="w-5 h-5 mt-0.5 flex-shrink-0" />
@@ -354,7 +354,7 @@ export function SeedImageAnalyzer({
                   </Badge>
                 </div>
                 <p className="text-sm text-gray-600">{analysis.detailedAnalysis.substring(0, 150)}...</p>
-                {analysis.buyerWarning.show && (
+                {analysis.buyerWarning?.show && (
                   <div className={`mt-3 p-3 rounded-lg ${getWarningColor(analysis.buyerWarning.severity)}`}>
                     <p className="text-sm font-semibold">{analysis.buyerWarning.message}</p>
                   </div>

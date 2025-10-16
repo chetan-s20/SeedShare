@@ -18,7 +18,7 @@ export default function SeedQualityTestPage() {
     // Show toast notification
     if (analysis.diseaseDetected) {
       toast.error(`Disease Detected: ${analysis.diseaseName}`, {
-        description: analysis.buyerWarning.message
+        description: analysis.buyerWarning?.message || 'Disease detected in seed sample.'
       })
     } else {
       toast.success('Seed Quality Check Passed', {
@@ -41,9 +41,9 @@ export default function SeedQualityTestPage() {
         prevention_measures: analysis.prevention,
         detailed_analysis: analysis.detailedAnalysis,
         recommendations: analysis.recommendations,
-        buyer_warning_show: analysis.buyerWarning.show,
-        buyer_warning_message: analysis.buyerWarning.message,
-        buyer_warning_severity: analysis.buyerWarning.severity,
+        buyer_warning_show: analysis.buyerWarning?.show || false,
+        buyer_warning_message: analysis.buyerWarning?.message || '',
+        buyer_warning_severity: analysis.buyerWarning?.severity || 'INFO',
         image_url: '', // Would be actual uploaded URL
         seed_type: analysis.seedType,
         context: 'testing'
