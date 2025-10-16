@@ -24,6 +24,7 @@ import {
   LogOut,
   Menu,
   Sparkles,
+  Microscope,
 } from 'lucide-react'
 import { useState } from 'react'
 import { logout } from '@/app/actions/auth'
@@ -49,6 +50,7 @@ export function Navbar({ user }: NavbarProps) {
     { name: 'Marketplace', href: '/marketplace', icon: ShoppingCart },
     { name: 'Community', href: '/community', icon: Users },
     { name: 'Knowledge Hub', href: '/knowledge', icon: BookOpen },
+    { name: 'Quality Test', href: '/quality-test', icon: Microscope },
   ]
 
   const isActive = (path: string) => pathname === path
