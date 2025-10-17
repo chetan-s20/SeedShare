@@ -1,7 +1,5 @@
 {
-  "buildCommand": "cd seedshare && pnpm install && pnpm build",
-  "devCommand": "cd seedshare && pnpm dev",
-  "installCommand": "cd seedshare && pnpm install",
-  "framework": null,
-  "outputDirectory": "seedshare/.next"
+  "buildCommand": "pnpm build",
+  "installCommand": "pnpm install",
+  "outputDirectory": ".next"
 }
