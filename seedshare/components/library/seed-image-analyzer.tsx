@@ -12,19 +12,19 @@ interface DiseaseAnalysis {
   severity: 'HEALTHY' | 'MILD' | 'MODERATE' | 'SEVERE' | 'CRITICAL'
   diseaseName: string
   confidence: number
-  symptoms: string[]
-  causativeAgent: string
-  germinationImpact: string
-  treatment: string[]
-  prevention: string[]
-  safeToPlant: boolean
+  symptoms?: string[]
+  causativeAgent?: string
+  germinationImpact?: string
+  treatment?: string[]
+  prevention?: string[]
+  safeToPlant?: boolean
   buyerWarning?: {
     show: boolean
     message: string
     severity: 'INFO' | 'WARNING' | 'DANGER'
   }
-  detailedAnalysis: string
-  recommendations: string
+  detailedAnalysis?: string
+  recommendations?: string
   analyzedAt?: string
   seedType?: string
 }
@@ -270,7 +270,7 @@ export function SeedImageAnalyzer({
 
               <div className="space-y-1">
                 <p className="text-sm text-gray-600">Causative Agent</p>
-                <p className="font-semibold">{analysis.causativeAgent}</p>
+                <p className="font-semibold">{analysis.causativeAgent || 'N/A'}</p>
               </div>
 
               <div className="space-y-1">
@@ -282,13 +282,15 @@ export function SeedImageAnalyzer({
             </div>
 
             {/* Germination Impact */}
-            <div className="space-y-2">
-              <p className="text-sm font-semibold text-gray-700">Germination Impact</p>
-              <p className="text-sm text-gray-600">{analysis.germinationImpact}</p>
-            </div>
+            {analysis.germinationImpact && (
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-gray-700">Germination Impact</p>
+                <p className="text-sm text-gray-600">{analysis.germinationImpact}</p>
+              </div>
+            )}
 
             {/* Symptoms */}
-            {analysis.symptoms.length > 0 && (
+            {analysis.symptoms && analysis.symptoms.length > 0 && (
               <div className="space-y-2">
                 <p className="text-sm font-semibold text-gray-700">Symptoms Observed</p>
                 <ul className="list-disc list-inside space-y-1">
@@ -300,7 +302,7 @@ export function SeedImageAnalyzer({
             )}
 
             {/* Treatment */}
-            {analysis.treatment.length > 0 && (
+            {analysis.treatment && analysis.treatment.length > 0 && (
               <div className="space-y-2">
                 <p className="text-sm font-semibold text-gray-700">Treatment Recommendations</p>
                 <ol className="list-decimal list-inside space-y-1">
@@ -312,7 +314,7 @@ export function SeedImageAnalyzer({
             )}
 
             {/* Prevention */}
-            {analysis.prevention.length > 0 && (
+            {analysis.prevention && analysis.prevention.length > 0 && (
               <div className="space-y-2">
                 <p className="text-sm font-semibold text-gray-700">Prevention Measures</p>
                 <ol className="list-decimal list-inside space-y-1">
@@ -324,16 +326,20 @@ export function SeedImageAnalyzer({
             )}
 
             {/* Detailed Analysis */}
-            <div className="space-y-2">
-              <p className="text-sm font-semibold text-gray-700">Detailed Analysis</p>
-              <p className="text-sm text-gray-600 whitespace-pre-wrap">{analysis.detailedAnalysis}</p>
-            </div>
+            {analysis.detailedAnalysis && (
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-gray-700">Detailed Analysis</p>
+                <p className="text-sm text-gray-600 whitespace-pre-wrap">{analysis.detailedAnalysis}</p>
+              </div>
+            )}
 
             {/* Recommendations */}
-            <div className="space-y-2">
-              <p className="text-sm font-semibold text-gray-700">Recommendations</p>
-              <p className="text-sm text-gray-600">{analysis.recommendations}</p>
-            </div>
+            {analysis.recommendations && (
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-gray-700">Recommendations</p>
+                <p className="text-sm text-gray-600">{analysis.recommendations}</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
@@ -353,7 +359,11 @@ export function SeedImageAnalyzer({
                     {analysis.severity}
                   </Badge>
                 </div>
-                <p className="text-sm text-gray-600">{analysis.detailedAnalysis.substring(0, 150)}...</p>
+                <p className="text-sm text-gray-600">
+                  {analysis.detailedAnalysis 
+                    ? analysis.detailedAnalysis.substring(0, 150) + '...'
+                    : 'Analysis completed. View details above.'}
+                </p>
                 {analysis.buyerWarning?.show && (
                   <div className={`mt-3 p-3 rounded-lg ${getWarningColor(analysis.buyerWarning.severity)}`}>
                     <p className="text-sm font-semibold">{analysis.buyerWarning.message}</p>

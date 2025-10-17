@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
-// Initialize SeedSearch AI
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || '')
+// Initialize SeedSearch AI - uses OPENAI_API_KEY for Gemini (legacy naming)
+const genAI = new GoogleGenerativeAI(process.env.OPENAI_API_KEY || '')
 
 // Format response to remove asterisks and use numbered lists
 function formatResponse(text: string): string {
@@ -160,9 +160,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!process.env.GOOGLE_API_KEY) {
+    if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(
-        { error: 'Google API key not configured. Please add GOOGLE_API_KEY to your .env.local file. Get a free key from https://aistudio.google.com/app/apikey' },
+        { error: 'Google API key not configured. Please add OPENAI_API_KEY to your .env.local file. Get a free key from https://aistudio.google.com/app/apikey' },
         { status: 500 }
       )
     }

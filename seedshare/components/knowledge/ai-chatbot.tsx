@@ -271,7 +271,10 @@ ${analysis.detailedAnalysis}`
       })
 
       if (!response.ok) {
-        throw new Error('Failed to get response')
+        const errorData = await response.json().catch(() => ({}))
+        console.error('Chat API error:', errorData)
+        const errorMessage = errorData.error || errorData.details || `Server error: ${response.status}`
+        throw new Error(errorMessage)
       }
 
       const data = await response.json()
