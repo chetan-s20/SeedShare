@@ -4,6 +4,123 @@ import { NextRequest, NextResponse } from 'next/server'
 
 const genAI = new GoogleGenerativeAI(process.env.OPENAI_API_KEY || '')
 
+// Validate and fix analysis consistency
+function validateAndFixAnalysis(analysis: any): any {
+  // Check if symptoms indicate disease but seedCondition is healthy
+  const hasNegativeSymptoms = analysis.symptoms?.some((symptom: string) => {
+    const lowerSymptom = symptom.toLowerCase()
+    return lowerSymptom.includes('discoloration') ||
+           lowerSymptom.includes('mold') ||
+           lowerSymptom.includes('rot') ||
+           lowerSymptom.includes('damage') ||
+           lowerSymptom.includes('disease') ||
+           lowerSymptom.includes('decay') ||
+           lowerSymptom.includes('breakdown') ||
+           lowerSymptom.includes('fungal') ||
+           lowerSymptom.includes('bacterial') ||
+           lowerSymptom.includes('infection') ||
+           lowerSymptom.includes('pathogen') ||
+           lowerSymptom.includes('shriveling') ||
+           lowerSymptom.includes('degradation')
+  })
+
+  // If there are negative symptoms OR diseases detected, ensure seedCondition is not "healthy"
+  if ((hasNegativeSymptoms || analysis.diseasesDetected?.length > 0) && analysis.seedCondition === 'healthy') {
+    console.warn('Fixing inconsistent analysis: Found disease symptoms but seedCondition was "healthy"')
+    
+    // Determine appropriate condition based on symptoms
+    if (analysis.symptoms?.some((s: string) => s.toLowerCase().includes('mold'))) {
+      analysis.seedCondition = 'moldy'
+    } else if (analysis.symptoms?.some((s: string) => s.toLowerCase().includes('rot') || s.toLowerCase().includes('decay'))) {
+      analysis.seedCondition = 'diseased'
+    } else if (analysis.symptoms?.some((s: string) => s.toLowerCase().includes('damage'))) {
+      analysis.seedCondition = 'damaged'
+    } else {
+      analysis.seedCondition = 'diseased'
+    }
+    
+    // Adjust severity if it was "none"
+    if (analysis.severity === 'none') {
+      // Determine severity based on symptom count and severity keywords
+      const symptomCount = analysis.symptoms?.length || 0
+      const hasSevereKeywords = analysis.symptoms?.some((s: string) => {
+        const lower = s.toLowerCase()
+        return lower.includes('severe') || lower.includes('extensive') || lower.includes('advanced')
+      })
+      
+      if (hasSevereKeywords || symptomCount >= 4) {
+        analysis.severity = 'severe'
+      } else if (symptomCount >= 2) {
+        analysis.severity = 'moderate'
+      } else {
+        analysis.severity = 'mild'
+      }
+    }
+  }
+  
+  // Ensure severity matches seedCondition
+  if (analysis.seedCondition === 'healthy' && analysis.severity !== 'none') {
+    analysis.severity = 'none'
+  }
+  
+  return analysis
+}
+
+// Transform analysis to UI-compatible format
+function transformAnalysisForUI(analysis: any): any {
+  // Map seedCondition to UI-expected format
+  const isDiseased = analysis.seedCondition !== 'healthy'
+  
+  // Convert severity to uppercase and map "none" to "HEALTHY"
+  let uiSeverity = analysis.severity?.toUpperCase() || 'UNKNOWN'
+  if (uiSeverity === 'NONE' || analysis.seedCondition === 'healthy') {
+    uiSeverity = 'HEALTHY'
+  }
+  
+  // Determine disease name
+  let diseaseName = 'No Disease Detected'
+  if (isDiseased) {
+    if (analysis.diseasesDetected && analysis.diseasesDetected.length > 0) {
+      diseaseName = analysis.diseasesDetected.join(', ')
+    } else {
+      // Derive from seedCondition
+      diseaseName = analysis.seedCondition.charAt(0).toUpperCase() + analysis.seedCondition.slice(1)
+    }
+  }
+  
+  // Convert confidence score from 0-1 to 0-100
+  const confidencePercentage = Math.round((analysis.confidenceScore || 0) * 100)
+  
+  // Determine buyer warning
+  const buyerWarning = {
+    show: isDiseased && (uiSeverity === 'SEVERE' || uiSeverity === 'CRITICAL'),
+    message: isDiseased 
+      ? `Warning: ${diseaseName} detected. ${analysis.safeToPlant === false ? 'Not safe to plant.' : 'May affect germination.'}`
+      : 'Seed appears healthy.',
+    severity: uiSeverity === 'CRITICAL' ? 'DANGER' : uiSeverity === 'SEVERE' ? 'WARNING' : 'INFO'
+  }
+  
+  return {
+    diseaseDetected: isDiseased,
+    severity: uiSeverity,
+    diseaseName: diseaseName,
+    confidence: confidencePercentage,
+    symptoms: analysis.symptoms || [],
+    causativeAgent: analysis.possibleCauses?.join(', ') || 'N/A',
+    germinationImpact: analysis.viabilityAssessment || 'Not assessed',
+    treatment: analysis.recommendations || [],
+    prevention: analysis.preventiveMeasures || [],
+    safeToPlant: analysis.seedCondition === 'healthy' || analysis.severity === 'none' || analysis.severity === 'mild',
+    buyerWarning: buyerWarning,
+    detailedAnalysis: analysis.detailedAnalysis || '',
+    recommendations: analysis.storageAdvice || '',
+    seedType: analysis.seedType || 'unknown',
+    analyzedAt: new Date().toISOString(),
+    // Keep original analysis for reference
+    _originalAnalysis: analysis
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
@@ -65,13 +182,22 @@ export async function POST(request: NextRequest) {
 
 Additional context from user: ${additionalContext}
 
+CRITICAL INSTRUCTION: You must ensure that seedCondition and symptoms are CONSISTENT with each other:
+- IF you observe ANY negative symptoms (discoloration, mold, rot, damage, disease signs), then seedCondition MUST be "diseased", "damaged", "infested", or "moldy" - NEVER "healthy"
+- IF seedCondition is "healthy", then symptoms array MUST be EMPTY or contain only positive observations
+- The severity level must match the seedCondition:
+  - "healthy" → severity: "none"
+  - "diseased/damaged/moldy/infested" with minor issues → severity: "mild"
+  - "diseased/damaged/moldy/infested" with moderate issues → severity: "moderate"
+  - "diseased/damaged/moldy/infested" with major issues → severity: "severe"
+
 Provide your analysis in this exact JSON structure (no markdown, just raw JSON):
 {
   "seedCondition": "healthy|diseased|damaged|infested|moldy|unknown",
   "confidenceScore": 0.85,
   "diseasesDetected": ["disease name 1", "disease name 2"],
   "symptoms": ["symptom 1", "symptom 2"],
-  "severity": "mild|moderate|severe|none",
+  "severity": "none|mild|moderate|severe",
   "possibleCauses": ["cause 1", "cause 2"],
   "recommendations": ["recommendation 1", "recommendation 2"],
   "medicinesSuggested": [
@@ -90,10 +216,11 @@ Provide your analysis in this exact JSON structure (no markdown, just raw JSON):
 }
 
 Important: 
+- ALWAYS ensure seedCondition matches the symptoms - if symptoms are negative, seedCondition CANNOT be "healthy"
 - Be specific and actionable in recommendations
 - If you cannot confidently identify the condition, set seedCondition to "unknown" and explain why in detailedAnalysis
 - Include only relevant medicines based on detected issues
-- Provide realistic confidence scores
+- Provide realistic confidence scores (0.0 to 1.0)
 - Focus on practical, implementable advice for farmers`
 
     const result = await model.generateContent([
@@ -133,13 +260,19 @@ Important:
       }, { status: 500 })
     }
 
-    // Save analysis to database
+    // Validate and fix any inconsistencies in the analysis
+    analysis = validateAndFixAnalysis(analysis)
+
+    // Transform to UI-compatible format
+    const uiAnalysis = transformAnalysisForUI(analysis)
+
+    // Save analysis to database (save original analysis structure)
     const { data: savedAnalysis, error: saveError } = await supabase
       .from('seed_image_analysis')
       .insert({
         user_id: user.id,
         image_url: publicUrl,
-        analysis_result: analysis,
+        analysis_result: analysis, // Save original analysis
         seed_condition: analysis.seedCondition,
         confidence_score: analysis.confidenceScore,
         diseases_detected: analysis.diseasesDetected || [],
@@ -157,7 +290,7 @@ Important:
     return NextResponse.json({
       success: true,
       imageUrl: publicUrl,
-      analysis: analysis,
+      analysis: uiAnalysis, // Return UI-compatible format
       analysisId: savedAnalysis?.id,
     })
 
