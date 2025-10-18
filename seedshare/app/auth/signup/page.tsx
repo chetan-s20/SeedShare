@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, Suspense } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -12,7 +12,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2, AlertCircle, CheckCircle2, Sprout } from 'lucide-react'
 import { signup, signInWithProvider } from '@/app/actions/auth-actions'
 
-export default function SignupPage() {
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
+function SignupContent() {
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
@@ -217,5 +220,20 @@ export default function SignupPage() {
         </CardFooter>
       </Card>
     </div>
+  )
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+        <div className="flex items-center space-x-2">
+          <Loader2 className="h-6 w-6 animate-spin text-green-600" />
+          <span className="text-muted-foreground">Loading...</span>
+        </div>
+      </div>
+    }>
+      <SignupContent />
+    </Suspense>
   )
 }

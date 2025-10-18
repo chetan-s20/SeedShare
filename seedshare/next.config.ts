@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 const nextConfig: NextConfig = {
   typescript: {
@@ -25,6 +26,8 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Fix for multiple lockfiles - set explicit output file tracing root
+  outputFileTracingRoot: path.join(__dirname),
 };
 
 export default nextConfig;
