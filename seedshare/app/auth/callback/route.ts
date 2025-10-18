@@ -5,18 +5,18 @@ import { NextRequest } from 'next/server'
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
-  const next = requestUrl.searchParams.get('next') || '/'
+  const next = requestUrl.searchParams.get('next') || '/dashboard'
 
   if (code) {
     const supabase = await createClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     
     if (!error) {
-      // Email confirmed successfully
-      return NextResponse.redirect(new URL(`/auth/login?confirmed=true`, requestUrl.origin))
+      // Session successfully exchanged, redirect to dashboard or next URL
+      return NextResponse.redirect(new URL(next, requestUrl.origin))
     }
   }
 
   // Return error if no code or if exchange failed
-  return NextResponse.redirect(new URL('/auth/login?error=Could not confirm email', requestUrl.origin))
+  return NextResponse.redirect(new URL('/auth/login?error=Could not authenticate', requestUrl.origin))
 }
