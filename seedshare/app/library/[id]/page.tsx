@@ -19,6 +19,8 @@ import {
 import Link from 'next/link';
 import RequestSeedButton from '@/components/library/request-seed-button';
 
+export const dynamic = 'force-dynamic'
+
 export default async function SeedDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();

@@ -16,6 +16,8 @@ import { PostCard } from '@/components/community/post-card'
 import { CommunitySidebar } from '@/components/community/community-sidebar'
 import { getCommunityPosts } from './actions'
 
+export const dynamic = 'force-dynamic'
+
 export default async function CommunityPage({
   searchParams,
 }: {

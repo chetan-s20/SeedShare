@@ -8,6 +8,8 @@ import Image from 'next/image';
 import { RequestDetailsModal } from '@/components/library/request-details-modal';
 import CreateGeneralRequestDialog from '@/components/library/create-general-request-dialog';
 
+export const dynamic = 'force-dynamic'
+
 export default async function MyRequestsPage() {
   const supabase = await createClient();
   

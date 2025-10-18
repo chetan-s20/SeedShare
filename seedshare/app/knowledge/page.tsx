@@ -5,6 +5,8 @@ import { AIChatbot } from '@/components/knowledge/ai-chatbot'
 import { QAForum } from '@/components/knowledge/qa-forum'
 import { ArticlesSection } from '@/components/knowledge/articles-section'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata = {
   title: 'Knowledge Hub | SeedShare',
   description: 'Get expert advice, ask questions, and learn about seeds and farming',

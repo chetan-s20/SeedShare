@@ -3,6 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, XCircle, Database, Lock, Image, Users } from 'lucide-react';
 
+export const dynamic = 'force-dynamic'
+
 export default async function BackendTestPage() {
   const supabase = await createClient();
   

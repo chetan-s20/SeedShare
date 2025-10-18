@@ -28,6 +28,8 @@ const categories = [
   'Other',
 ]
 
+export const dynamic = 'force-dynamic'
+
 export default async function AskQuestionPage() {
   const supabase = await createClient()
   const {

@@ -10,6 +10,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2, AlertCircle, CheckCircle2, Lock } from 'lucide-react'
 import { updatePassword } from '@/app/actions/auth-actions'
 
+export const dynamic = 'force-dynamic'
+
 export default function ResetPasswordPage() {
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)

@@ -7,6 +7,8 @@ import { AccountSettings } from './account-settings'
 import { SecuritySettings } from './security-settings'
 import { NotificationSettings } from './notification-settings'
 
+export const dynamic = 'force-dynamic'
+
 export default async function SettingsPage() {
   const supabase = await createClient()
 

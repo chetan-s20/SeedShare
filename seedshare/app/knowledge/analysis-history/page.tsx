@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button'
 import { ArrowLeft, Calendar, TrendingUp } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 
+export const dynamic = 'force-dynamic'
+
 export default async function AnalysisHistoryPage() {
   const supabase = await createClient()
   

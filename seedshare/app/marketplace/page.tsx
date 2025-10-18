@@ -20,6 +20,8 @@ import {
 import { getMarketplaceProducts, getProductCategories } from '@/lib/supabase/marketplace-actions'
 import { MarketplaceProductCard } from './product-card'
 
+export const dynamic = 'force-dynamic'
+
 export default async function MarketplacePage({
   searchParams,
 }: {

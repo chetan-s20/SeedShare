@@ -27,6 +27,8 @@ import {
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 
+export const dynamic = 'force-dynamic'
+
 export default async function HomePage() {
   // Fetch REAL data from database
   const supabase = await createClient();

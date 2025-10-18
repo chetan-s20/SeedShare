@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle2, XCircle, AlertCircle, Database, Lock, Image, Users, Code, Server } from 'lucide-react';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic'
+
 export default async function SystemCheckPage() {
   const checks = {
     environment: false,
