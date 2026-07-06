@@ -222,8 +222,9 @@ Example MongoDB schemas or tables:
 
 ## 🤝 Contributors
 
-- **Niharika Khosla** – ([LinkedIn](https://www.linkedin.com/in/niharika-khosla-95357b333/)) &ndash; *Project lead & front-end*  
-- **Chetan Sharma** –  (GitHub: [chetan-s20](https://github.com/chetan-s20)) – *Data modeling & API development*  
+- **Niharika Khosla** – ([LinkedIn](https://www.linkedin.com/in/niharika-khosla-95357b333/)) &ndash; 
+- **Chetan Sharma** –  (GitHub: [chetan-s20](https://github.com/chetan-s20)) 
+- **Parmeet Singh** –  (GitHub: [ParmeetCS](https://github.com/ParmeetCS)) 
 
 
 
